@@ -11,6 +11,7 @@ class CourseDirectoryScreen extends StatefulWidget {
   final ValueChanged<int>? onSelectSidebarIndex;
   final VoidCallback? onSignOut;
   final bool showSidebar;
+  
 
   const CourseDirectoryScreen({
     super.key,
@@ -29,6 +30,10 @@ class CourseDirectoryScreen extends StatefulWidget {
 
 class _CourseDirectoryScreenState
     extends State<CourseDirectoryScreen> {
+  // The LMS shell/sidebar is owned by the parent application.
+  // This screen only swaps its CONTENT between directory and details.
+  Course? selectedCourse;
+  int detailTab = 0;
   // ==========================================================
   // BRANCHES
   // ==========================================================
@@ -118,157 +123,1475 @@ class _CourseDirectoryScreenState
 
   @override
   Widget build(BuildContext context) {
-    final bool dark = widget.isDarkMode;
-
-    final bgColor = dark
-        ? const Color(0xFF090D16)
-        : background;
-
-    final cardColor = dark
-        ? const Color(0xFF131927)
-        : Colors.white;
-
-    final primaryText = dark
-        ? Colors.white
-        : textDark;
-
-    final secondaryText = dark
-        ? const Color(0xFF94A3B8)
-        : textMuted;
-
-    final filteredCourses =
-        _getFilteredCourses();
+    final dark = widget.isDarkMode;
+    final bgColor = dark ? const Color(0xFF090D16) : background;
+    final cardColor = dark ? const Color(0xFF131927) : Colors.white;
+    final primaryText = dark ? Colors.white : textDark;
+    final secondaryText =
+        dark ? const Color(0xFF94A3B8) : textMuted;
 
     return Scaffold(
       backgroundColor: bgColor,
+      body: selectedCourse == null
+          ? _buildDirectoryContent(cardColor, primaryText, secondaryText)
+          : _buildCourseDetailContent(
+              selectedCourse!,
+              cardColor,
+              primaryText,
+              secondaryText,
+            ),
+      floatingActionButton: _buildSophiaButton(),
+    );
+  }
 
-      body: Column(
-        children: [
-          _buildHeader(
-            cardColor,
-            primaryText,
-            secondaryText,
-          ),
+  Widget _buildDirectoryContent(
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    final courses = _getFilteredCourses();
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                28,
-                18,
-                28,
-                32,
-              ),
-
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-
-                children: [
-                  _buildBranchFilters(
-                    primaryText,
-                    secondaryText,
-                    cardColor,
+    return Column(
+      children: [
+        _buildHeader(cardColor, primaryText, secondaryText),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(28, 18, 28, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBranchFilters(
+                  primaryText,
+                  secondaryText,
+                  cardColor,
+                ),
+                const SizedBox(height: 24),
+                if (courses.isEmpty)
+                  _buildEmptyState(primaryText, secondaryText)
+                else
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      int columns = constraints.maxWidth < 600
+                          ? 1
+                          : constraints.maxWidth < 900
+                              ? 2
+                              : 3;
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics:
+                            const NeverScrollableScrollPhysics(),
+                        itemCount: courses.length,
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          crossAxisSpacing: 18,
+                          mainAxisSpacing: 18,
+                          mainAxisExtent:
+                              columns == 3 ? 370 : 390,
+                        ),
+                        itemBuilder: (context, index) =>
+                            _buildCourseCard(
+                          courses[index],
+                          primaryText,
+                          secondaryText,
+                          cardColor,
+                        ),
+                      );
+                    },
                   ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-                  const SizedBox(height: 24),
+  // ==========================================================
+  // INLINE COURSE DETAILS
+  //
+  // No Drawer, NavigationRail, sidebar or second LMS shell is
+  // created here. The existing application sidebar stays exactly
+  // where it is; only the content area changes.
+  // ==========================================================
 
-                  if (filteredCourses.isEmpty)
-                    _buildEmptyState(
-                      primaryText,
-                      secondaryText,
-                    )
-                  else
-                    LayoutBuilder(
-                      builder:
-                          (context, constraints) {
-                        final width =
-                            constraints.maxWidth;
-
-                        int columns = 3;
-
-                        if (width < 900) {
-                          columns = 2;
-                        }
-
-                        if (width < 600) {
-                          columns = 1;
-                        }
-
-                        // IMPORTANT:
-                        // Do not use a fixed childAspectRatio here.
-                        //
-                        // The course card contains a 145px banner plus several
-                        // rows of text, progress and buttons. On a wide window,
-                        // a 3-column childAspectRatio of 1.48 makes each card
-                        // too short and Flutter reports:
-                        //
-                        //   A RenderFlex overflowed by ... pixels on the bottom
-                        //
-                        // mainAxisExtent gives the card enough vertical space
-                        // and remains stable while the desktop window is resized.
-                        final double cardHeight;
-                        if (columns == 3) {
-                          cardHeight = 370;
-                        } else if (columns == 2) {
-                          cardHeight = 380;
-                        } else {
-                          cardHeight = 390;
-                        }
-
-                        return GridView.builder(
-                          shrinkWrap: true,
-                          physics:
-                              const NeverScrollableScrollPhysics(),
-
-                          itemCount:
-                              filteredCourses.length,
-
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount:
-                                columns,
-
-                            crossAxisSpacing:
-                                18,
-
-                            mainAxisSpacing:
-                                18,
-
-                            // Fixed vertical space instead of aspect ratio.
-                            // This prevents the card's Column from becoming
-                            // shorter than its contents during resizing.
-                            mainAxisExtent:
-                                cardHeight,
-                          ),
-
-                          itemBuilder:
-                              (context, index) {
-                            return _buildCourseCard(
-                              filteredCourses[
-                                  index],
-                              primaryText,
-                              secondaryText,
-                              cardColor,
-                            );
-                          },
-                        );
-                      },
+  Widget _buildCourseDetailContent(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(28, 18, 28, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: _backToDirectory,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.arrow_back,
+                    size: 17,
+                    color: Color(0xFFFF5261),
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    'BACK TO DIRECTORY',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFFFF5261),
                     ),
+                  ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 14),
+          _detailHero(
+            course,
+            cardColor,
+            primaryText,
+            secondaryText,
+          ),
+          const SizedBox(height: 18),
+          _detailTabs(secondaryText),
+          const SizedBox(height: 20),
+          _detailBody(
+            course,
+            cardColor,
+            primaryText,
+            secondaryText,
+          ),
         ],
       ),
-
-      // ========================================================
-      // SOPHIA FLOATING BUTTON
-      // ========================================================
-
-      floatingActionButton:
-          _buildSophiaButton(),
     );
   }
+
+  Widget _detailHero(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(28, 26, 28, 25),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: widget.isDarkMode
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .05),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 850;
+          final info = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 13,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: orange.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  _detailBranch(course),
+                  style: GoogleFonts.inter(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: orange,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                course.title,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: compact ? 27 : 31,
+                  height: 1.08,
+                  fontWeight: FontWeight.w800,
+                  color: primaryText,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '${course.lessonsCount} Lessons • ${course.duration} • Certified Learning Path Syllabus',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: secondaryText,
+                ),
+              ),
+            ],
+          );
+
+          final actions = Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => _launchPlayer(course),
+                icon: const Icon(
+                  Icons.ondemand_video_outlined,
+                  size: 16,
+                ),
+                label: const Text('Launch Player'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6268),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 13,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  textStyle: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _practiceQuiz(course),
+                icon: const Icon(
+                  Icons.menu_book_outlined,
+                  size: 16,
+                ),
+                label: const Text('Take Practice Quiz'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF151922),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 13,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  textStyle: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          );
+
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                info,
+                const SizedBox(height: 18),
+                actions,
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: info),
+              const SizedBox(width: 25),
+              actions,
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _detailTabs(Color secondaryText) {
+    const labels = [
+      '📌 Next Class & Pinned Assignment',
+      '📚 Prescribed Textbooks',
+      'Overview & Scope',
+      'Module Curriculum',
+      'Peer Reviews',
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(labels.length, (index) {
+          final active = detailTab == index;
+          return InkWell(
+            onTap: () => setState(() => detailTab = index),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(5, 8, 22, 13),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: active
+                        ? const Color(0xFFFF5261)
+                        : Colors.transparent,
+                    width: 3,
+                  ),
+                ),
+              ),
+              child: Text(
+                labels[index],
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight:
+                      active ? FontWeight.w800 : FontWeight.w600,
+                  color: active
+                      ? const Color(0xFFFF5261)
+                      : secondaryText,
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _detailBody(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    switch (detailTab) {
+      case 1:
+        return _booksTab(
+          course,
+          cardColor,
+          primaryText,
+          secondaryText,
+        );
+      case 2:
+        return _overviewTab(
+          course,
+          cardColor,
+          primaryText,
+          secondaryText,
+        );
+      case 3:
+        return _modulesTab(
+          course,
+          cardColor,
+          primaryText,
+          secondaryText,
+        );
+      case 4:
+        return _reviewsTab(
+          course,
+          cardColor,
+          primaryText,
+          secondaryText,
+        );
+      default:
+        return _nextClassTab(
+          course,
+          cardColor,
+          primaryText,
+          secondaryText,
+        );
+    }
+  }
+
+  Widget _nextClassTab(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    final d = _detailsFor(course);
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(28, 26, 28, 28),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF075B83),
+                Color(0xFF151A4D),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  _darkPill('SCHEDULED NEXT DAY CLASS'),
+                  Text(
+                    'Instructor: ${d.instructor}',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              Text(
+                d.nextClass,
+                style: GoogleFonts.inter(
+                  fontSize: 19,
+                  height: 1.2,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 18),
+              LayoutBuilder(
+                builder: (context, c) {
+                  final narrow = c.maxWidth < 800;
+                  final objective = _darkBox(
+                    'CLASS LEARNING OBJECTIVE',
+                    d.objective,
+                    const Color(0xFF3EE6E3),
+                  );
+                  final prep = _darkBox(
+                    'PREPARATION & PRE-READING NOTES',
+                    d.preparation,
+                    const Color(0xFFFFE600),
+                  );
+
+                  if (narrow) {
+                    return Column(
+                      children: [
+                        objective,
+                        const SizedBox(height: 12),
+                        prep,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: objective),
+                      const SizedBox(width: 16),
+                      Expanded(child: prep),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Google Meet link is not configured yet.',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.calendar_month_outlined,
+                    size: 16,
+                  ),
+                  label: const Text(
+                    'Join Live Scheduled Google Meet Class',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0BA9ED),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    textStyle: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        _assignmentCard(
+          course,
+          cardColor,
+          primaryText,
+          secondaryText,
+          d,
+        ),
+      ],
+    );
+  }
+
+  Widget _darkPill(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 7,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B78A9),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 8,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _darkBox(
+    String title,
+    String text,
+    Color titleColor,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .055),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: .12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+              color: titleColor,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: 10.5,
+              height: 1.45,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _assignmentCard(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+    _DetailData d,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF55DAB7),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'INSTRUCTED BY ${d.instructor.toUpperCase()}',
+            style: GoogleFonts.inter(
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF00A978),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '📌 Class Assignment: ${d.assignment}',
+            style: GoogleFonts.inter(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: primaryText,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(17),
+            decoration: BoxDecoration(
+              color: widget.isDarkMode
+                  ? const Color(0xFF172033)
+                  : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              d.assignmentText,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                height: 1.45,
+                color: secondaryText,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 18,
+            runSpacing: 10,
+            children: [
+              Text(
+                'Due Date: Tomorrow, 11:59 PM',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF00A978),
+                ),
+              ),
+              Text(
+                'Points: 100 Marks',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF6D28D9),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Assignment submission is ready to connect.',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.description_outlined,
+                  size: 15,
+                ),
+                label: const Text('Submit Assignment Solution'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 17,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _booksTab(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    final d = _detailsFor(course);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.menu_book_outlined,
+              color: Color(0xFF7C3AED),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Prescribed Reference Books & Reading List',
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: primaryText,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        LayoutBuilder(
+          builder: (context, c) {
+            final columns = c.maxWidth > 900 ? 2 : 1;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: d.books.length,
+              gridDelegate:
+                  SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                mainAxisExtent: 205,
+              ),
+              itemBuilder: (context, i) {
+                final book = d.books[i];
+                return Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: widget.isDarkMode
+                          ? const Color(0xFF263244)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        book[0],
+                        style: GoogleFonts.inter(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF7C3AED),
+                        ),
+                      ),
+                      const SizedBox(height: 11),
+                      Text(
+                        book[1],
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: primaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Authors: ${book[2]}',
+                        style: GoogleFonts.inter(
+                          fontSize: 9.5,
+                          color: secondaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: Text(
+                          '📌 Recommended Reading: ${book[3]}',
+                          style: GoogleFonts.inter(
+                            fontSize: 9.5,
+                            height: 1.4,
+                            color: const Color(0xFF6D28D9),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () {},
+                          child: const Text(
+                            '↗ Access Reference Book / PDF',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _overviewTab(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    final d = _detailsFor(course);
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        final stacked = c.maxWidth < 850;
+
+        final left = Container(
+          padding: const EdgeInsets.all(25),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: widget.isDarkMode
+                  ? const Color(0xFF263244)
+                  : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Course Objectives & Scope',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: primaryText,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                d.overview,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  height: 1.55,
+                  color: secondaryText,
+                ),
+              ),
+              const Divider(height: 30),
+              Text(
+                'KEY LEARNING OUTCOMES',
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  color: primaryText,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...d.outcomes.map(
+                (x) => Padding(
+                  padding: const EdgeInsets.only(bottom: 11),
+                  child: Row(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline,
+                        size: 16,
+                        color: Color(0xFF10B981),
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          x,
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            height: 1.4,
+                            color: secondaryText,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        final right = Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: widget.isDarkMode
+                  ? const Color(0xFF263244)
+                  : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sideField(
+                'TARGET LEVEL',
+                d.level,
+                primaryText,
+                secondaryText,
+              ),
+              const Divider(height: 26),
+              _sideField(
+                'TARGET AUDIENCE',
+                d.audience,
+                primaryText,
+                secondaryText,
+              ),
+              const Divider(height: 26),
+              _sideField(
+                'PREREQUISITES',
+                d.prerequisites,
+                primaryText,
+                secondaryText,
+              ),
+              const Divider(height: 26),
+              Text(
+                'SKILLS & FRAMEWORKS',
+                style: GoogleFonts.inter(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w800,
+                  color: secondaryText,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: d.skills
+                    .map(
+                      (x) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6)
+                              .withValues(alpha: .06),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFF8B5CF6)
+                                .withValues(alpha: .2),
+                          ),
+                        ),
+                        child: Text(
+                          x,
+                          style: GoogleFonts.inter(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF6D28D9),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ),
+        );
+
+        if (stacked) {
+          return Column(
+            children: [
+              left,
+              const SizedBox(height: 16),
+              right,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 3, child: left),
+            const SizedBox(width: 18),
+            Expanded(child: right),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _sideField(
+    String label,
+    String value,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 8,
+            fontWeight: FontWeight.w800,
+            color: secondaryText,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            height: 1.45,
+            color: primaryText,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _modulesTab(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Showing ${course.modules.length} Modules for ${course.title}',
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            color: secondaryText,
+          ),
+        ),
+        const SizedBox(height: 14),
+        ...course.modules.asMap().entries.map(
+          (entry) => Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 13),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: widget.isDarkMode
+                    ? const Color(0xFF263244)
+                    : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 17,
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    color: Color(0xFF10B981),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Module ${entry.key + 1}: ${entry.value.title}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: primaryText,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${entry.value.lessonsCount} Lessons • ${entry.value.duration}',
+                    style: GoogleFonts.inter(
+                      fontSize: 8,
+                      color: secondaryText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _reviewsTab(
+    Course course,
+    Color cardColor,
+    Color primaryText,
+    Color secondaryText,
+  ) {
+    final reviews = [
+      'Outstanding content for ${course.title}! The Ask AI sidebar in the player helped me clarify so many concepts.',
+      'Very thorough syllabus. The module roadmap aligns perfectly with our semester requirements.',
+      'Clear explanations, great code/simulation examples, and clean structured curriculum modules.',
+    ];
+    const names = [
+      'Rahul Sahu',
+      'Oliver Platt',
+      'Ananya Sharma',
+    ];
+
+    return Column(
+      children: List.generate(
+        reviews.length,
+        (i) => Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: widget.isDarkMode
+                  ? const Color(0xFF263244)
+                  : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      names[i],
+                      style: GoogleFonts.inter(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: primaryText,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      reviews[i],
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        height: 1.45,
+                        color: secondaryText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Text(
+                '★★★★★',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFFF7A2F),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // COURSE-SPECIFIC DESCRIPTIONS
+  // ==========================================================
+
+  _DetailData _detailsFor(Course course) {
+    final t = course.title.toLowerCase();
+
+    if (t.contains('react') || t.contains('web')) {
+      return const _DetailData(
+        instructor: 'Instructor Kumar',
+        nextClass:
+            'React 18 Concurrent Rendering, Suspense & Fiber Reconciliation',
+        objective:
+            'Master how Fiber trees split rendering work into frame chunks without blocking main browser thread or user input.',
+        preparation:
+            'Review Chapter 3 on useEffect lifecycle cleanups. Open your LMS Code Playground prior to class start.',
+        assignment:
+            'Custom Suspense Loader with Error Boundary Retry',
+        assignmentText:
+            'Build a modular React Suspense container wrapper supporting dynamic fallback skeleton states, error boundary catches, and automated exponential backoff retries.',
+        overview:
+            'Master modern web frontend architectures, React 18 state hooks, Tailwind CSS, and TypeScript. This course provides hands-on engineering experience in building high-performance single-page applications and deploying scalable production runtimes.',
+        level: 'INTERMEDIATE / ADVANCED',
+        audience:
+            'Software Engineering & Computer Science students wanting production-ready web frontend skills.',
+        prerequisites:
+            'Basic understanding of HTML5, CSS, and JavaScript ES6 fundamentals.',
+        skills: [
+          'React 18',
+          'TypeScript',
+          'Tailwind CSS',
+          'Vite',
+          'Zustand',
+          'Context API',
+        ],
+        outcomes: [
+          'Architect modular React component hierarchies with strict TypeScript interfaces.',
+          'Manage complex asynchronous state flows using Zustand, Context API, and TanStack Query.',
+          'Build responsive design systems using utility-first Tailwind CSS.',
+          'Configure Vite production build bundles and deploy resilient client-server applications.',
+        ],
+        books: [
+          [
+            '2ND EDITION (O’REILLY MEDIA)',
+            'Learning React: Modern Patterns for Developing Applications',
+            'Alex Banks & Eve Porcello',
+            'Chapters 6 & 8: State Management, Custom Hooks & Concurrent Mode',
+          ],
+          [
+            '1ST EDITION (O’REILLY MEDIA)',
+            'Programming TypeScript: Making Your JavaScript Applications Scale',
+            'Boris Cherny',
+            'Chapters 4 & 5: Advanced Types, Generics & React Interfaces',
+          ],
+          [
+            'REFERENCE',
+            'React Official Documentation',
+            'React Core Team',
+            'React 18 rendering, hooks, Suspense and modern component patterns.',
+          ],
+        ],
+      );
+    }
+
+    if (t.contains('python') ||
+        t.contains('machine') ||
+        t.contains('data')) {
+      return const _DetailData(
+        instructor: 'Instructor Kumar',
+        nextClass:
+            'PyTorch Training Pipelines, Data Tensors & Model Evaluation',
+        objective:
+            'Build reliable data-to-model pipelines and understand tensors, training loops, validation and evaluation.',
+        preparation:
+            'Review NumPy broadcasting, Pandas groupby operations, train-test splitting and basic neural-network terminology.',
+        assignment:
+            'End-to-End ML Dataset Pipeline',
+        assignmentText:
+            'Create a reproducible Python pipeline that cleans a dataset, prepares features, trains a baseline model, evaluates it and reports important metrics.',
+        overview:
+            'Build practical expertise in Python data processing, machine learning, neural networks, PyTorch workflows and modern generative AI applications.',
+        level: 'INTERMEDIATE / ADVANCED',
+        audience:
+            'AI/ML, Data Science and Computer Science students building practical machine-learning skills.',
+        prerequisites:
+            'Basic Python programming, probability fundamentals and introductory linear algebra.',
+        skills: [
+          'Python',
+          'Pandas',
+          'NumPy',
+          'Scikit-learn',
+          'PyTorch',
+          'LLMs',
+        ],
+        outcomes: [
+          'Clean, transform, visualize and validate real-world datasets.',
+          'Build supervised machine-learning pipelines with appropriate evaluation metrics.',
+          'Implement neural-network training workflows using PyTorch.',
+          'Understand practical LLM and generative-AI application patterns.',
+        ],
+        books: [
+          [
+            'REFERENCE',
+            'Python for Data Analysis',
+            'Wes McKinney',
+            'Pandas, data cleaning, transformation, grouping and analysis.',
+          ],
+          [
+            'REFERENCE',
+            'Hands-On Machine Learning',
+            'Aurélien Géron',
+            'Feature engineering, model evaluation and practical ML workflows.',
+          ],
+          [
+            'REFERENCE',
+            'Deep Learning with PyTorch',
+            'PyTorch Community',
+            'Tensor operations, model training, optimization and evaluation.',
+          ],
+        ],
+      );
+    }
+
+    if (t.contains('java')) {
+      return const _DetailData(
+        instructor: 'Instructor Kumar',
+        nextClass:
+            'Spring Boot REST APIs, Dependency Injection & Production Configuration',
+        objective:
+            'Design maintainable Spring Boot services using dependency injection, REST controllers, validation, persistence and production configuration.',
+        preparation:
+            'Review Java OOP, collections, interfaces, exceptions, JDBC basics and HTTP request/response concepts.',
+        assignment:
+            'Production-Ready Spring Boot Microservice',
+        assignmentText:
+            'Build a Spring Boot REST service with layered architecture, validation, persistence, centralized exception handling and container-ready configuration.',
+        overview:
+            'Develop production-grade backend applications using modern Java, Spring Boot, database persistence, REST APIs, testing and Docker-based deployment.',
+        level: 'INTERMEDIATE',
+        audience:
+            'Java developers and Computer Science students preparing for backend engineering roles.',
+        prerequisites:
+            'Core Java, OOP, collections, exception handling, SQL and basic HTTP concepts.',
+        skills: [
+          'Java 21',
+          'Spring Boot',
+          'REST APIs',
+          'PostgreSQL',
+          'JPA',
+          'Docker',
+        ],
+        outcomes: [
+          'Build layered Spring Boot applications using dependency injection.',
+          'Design REST endpoints with validation and consistent error handling.',
+          'Persist application data using JPA and relational databases.',
+          'Package backend services using production-oriented Docker workflows.',
+        ],
+        books: [
+          [
+            'REFERENCE',
+            'Spring Start Here',
+            'Laurentiu Spilca',
+            'Dependency injection, Spring beans, configuration and application architecture.',
+          ],
+          [
+            'REFERENCE',
+            'Effective Java',
+            'Joshua Bloch',
+            'Core Java design practices, APIs, objects and maintainable code.',
+          ],
+          [
+            'REFERENCE',
+            'Spring Boot Reference Documentation',
+            'Spring Team',
+            'Production configuration, web applications, data access and deployment.',
+          ],
+        ],
+      );
+    }
+
+    if (t.contains('flutter') ||
+        t.contains('dart') ||
+        t.contains('mobile')) {
+      return const _DetailData(
+        instructor: 'Instructor Kumar',
+        nextClass:
+            'Flutter Widget Architecture, State Management & Responsive Layouts',
+        objective:
+            'Build maintainable Flutter screens with reusable widgets, responsive layouts, navigation and predictable application state.',
+        preparation:
+            'Review Dart classes, null safety, async/await, Flutter widget lifecycle and basic navigation.',
+        assignment:
+            'Responsive Flutter Course Dashboard',
+        assignmentText:
+            'Build a responsive Flutter dashboard using reusable widgets, adaptive layouts, navigation and local state while keeping the UI consistent across desktop and mobile sizes.',
+        overview:
+            'Develop cross-platform applications using Dart and Flutter with clean widget architecture, responsive layouts, state management and production-ready navigation.',
+        level: 'INTERMEDIATE',
+        audience:
+            'Mobile application developers and Computer Science students learning cross-platform engineering.',
+        prerequisites:
+            'Basic Dart programming and familiarity with object-oriented programming.',
+        skills: [
+          'Flutter',
+          'Dart',
+          'Widgets',
+          'State Management',
+          'Responsive UI',
+        ],
+        outcomes: [
+          'Compose reusable Flutter widgets and scalable screen structures.',
+          'Implement responsive interfaces for desktop, tablet and mobile.',
+          'Manage navigation and application state cleanly.',
+          'Prepare Flutter applications for production builds and deployment.',
+        ],
+        books: [
+          [
+            'REFERENCE',
+            'Flutter Documentation',
+            'Flutter Team',
+            'Widgets, responsive layouts, navigation and application architecture.',
+          ],
+          [
+            'REFERENCE',
+            'Dart Language Tour',
+            'Dart Team',
+            'Null safety, classes, collections and asynchronous programming.',
+          ],
+          [
+            'REFERENCE',
+            'Flutter in Action',
+            'Eric Windmill',
+            'Flutter widget composition, state and navigation.',
+          ],
+        ],
+      );
+    }
+
+    return _DetailData(
+      instructor: 'Instructor Kumar',
+      nextClass: '${course.title} — Core Concepts & Implementation',
+      objective:
+          'Build a strong conceptual foundation and apply the course topics through practical engineering exercises.',
+      preparation:
+          'Review the previous module and complete the introductory exercises before the next class.',
+      assignment: 'Practical ${course.title} Project',
+      assignmentText:
+          'Complete a practical implementation covering the major concepts from the current module and submit a short explanation of your design decisions.',
+      overview: course.description,
+      level: 'INTERMEDIATE',
+      audience:
+          'Computer Science and Engineering students developing practical engineering skills.',
+      prerequisites:
+          'Basic programming knowledge and familiarity with the course domain.',
+      skills: course.tags.isEmpty
+          ? const ['Core Concepts', 'Practical Skills']
+          : course.tags,
+      outcomes: const [
+        'Understand the core concepts covered throughout the course.',
+        'Apply the concepts through structured practical exercises.',
+        'Build a small portfolio-ready implementation.',
+        'Review and assess your own learning progress.',
+      ],
+      books: const [
+        [
+          'REFERENCE',
+          'Course Reference Material',
+          'Next Gen LMS',
+          'Use the course modules and prescribed readings for guided study.',
+        ],
+      ],
+    );
+  }
+
+  String _detailBranch(Course course) {
+    return course.departmentCode == 'CSE'
+        ? 'COMPUTER SCIENCE & ENGINEERING'
+        : course.departmentCode;
+  }
+
+  void _backToDirectory() {
+    setState(() {
+      selectedCourse = null;
+      detailTab = 0;
+    });
+  }
+
+  void _launchPlayer(Course course) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Launching ${course.title} player...')),
+    );
+  }
+
+  void _practiceQuiz(Course course) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Practice quiz for ${course.title} is ready to connect.',
+        ),
+      ),
+    );
+  }
+
 
   // ==========================================================
   // HEADER
@@ -2132,20 +3455,11 @@ class _CourseDirectoryScreenState
   // COURSE ACTIONS
   // ==========================================================
 
-  void _openCourse(
-    Course course,
-  ) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Opening ${course.title}',
-        ),
-        backgroundColor:
-            orange,
-      ),
-    );
+  void _openCourse(Course course) {
+    setState(() {
+      selectedCourse = course;
+      detailTab = 0;
+    });
   }
 
   void _showSyllabus(
@@ -2346,6 +3660,42 @@ class _CourseDirectoryScreenState
       },
     );
   }
+}
+
+// ============================================================
+// INLINE COURSE DETAIL DATA
+// ============================================================
+
+class _DetailData {
+  final String instructor;
+  final String nextClass;
+  final String objective;
+  final String preparation;
+  final String assignment;
+  final String assignmentText;
+  final String overview;
+  final String level;
+  final String audience;
+  final String prerequisites;
+  final List<String> skills;
+  final List<String> outcomes;
+  final List<List<String>> books;
+
+  const _DetailData({
+    required this.instructor,
+    required this.nextClass,
+    required this.objective,
+    required this.preparation,
+    required this.assignment,
+    required this.assignmentText,
+    required this.overview,
+    required this.level,
+    required this.audience,
+    required this.prerequisites,
+    required this.skills,
+    required this.outcomes,
+    required this.books,
+  });
 }
 
 // ============================================================
