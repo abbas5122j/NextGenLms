@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:file_picker/file_picker.dart';
 
 /// Next Gen LMS Project module.
 /// IMPORTANT: This widget intentionally has NO sidebar.
@@ -83,33 +82,194 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   @override
   Widget build(BuildContext context) {
     if (selected != null) {
-      return ProjectDetails(project: selected!, dark: widget.isDarkMode, userName: widget.userName, onBack: () => setState(() => selected = null));
+      return ProjectDetails(
+        project: selected!,
+        dark: widget.isDarkMode,
+        userName: widget.userName,
+        onBack: () => setState(() => selected = null),
+      );
     }
+
     final dark = widget.isDarkMode;
     final card = dark ? const Color(0xFF131927) : Colors.white;
     final text = dark ? Colors.white : const Color(0xFF111827);
     final sub = dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     return Container(
       color: dark ? const Color(0xFF090D16) : bg,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(34, 26, 34, 40),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('🎓  BRANCH-WISE ENGINEERING TRACK', style: GoogleFonts.inter(color: orange, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: .6)),
-              const SizedBox(height: 7),
-              Text('Hands-On Engineering Projects & AI Guidance', style: GoogleFonts.inter(color: text, fontSize: 28, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 6),
-              Text('Explore real-world projects with step-by-step roadmaps, code hints, troubleshooting guides, and our Sophia AI Mentor.', style: GoogleFonts.inter(color: sub, fontSize: 12.5)),
-            ])),
-            const SizedBox(width: 24),
-            SizedBox(width: 330, child: TextField(onChanged: (v) => setState(() => search = v), style: GoogleFonts.inter(color: text, fontSize: 12), decoration: InputDecoration(hintText: 'Search projects, skills, tech...', hintStyle: GoogleFonts.inter(color: sub, fontSize: 12), prefixIcon: Icon(Icons.search, color: sub, size: 18), filled: true, fillColor: card, border: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: dark ? const Color(0xFF273244) : const Color(0xFFE2E8F0))))),
-          ]),
-          const SizedBox(height: 22),
-          SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: branches.map((b) => Padding(padding: const EdgeInsets.only(right: 8), child: InkWell(borderRadius: BorderRadius.circular(12), onTap: () => setState(() => branch = b.code), child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: branch == b.code ? orange : card, borderRadius: BorderRadius.circular(12), border: Border.all(color: branch == b.code ? orange : (dark ? const Color(0xFF273244) : const Color(0xFFE2E8F0)))), child: Row(children: [Text(b.label, style: GoogleFonts.inter(color: branch == b.code ? Colors.white : text, fontSize: 11.5, fontWeight: FontWeight.w800)), if (b.code != 'ALL') ...[const SizedBox(width: 7), Text('${b.count}', style: GoogleFonts.inter(color: branch == b.code ? Colors.white : sub, fontSize: 9, fontWeight: FontWeight.w800))]]))))).toList()),
-          const SizedBox(height: 20),
-          if (filtered.isEmpty) _empty(text, sub, card) else LayoutBuilder(builder: (_, c) { final cols = c.maxWidth >= 1000 ? 2 : 1; return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: filtered.length, gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cols, crossAxisSpacing: 22, mainAxisSpacing: 22, mainAxisExtent: 264), itemBuilder: (_, i) => _projectCard(filtered[i], card, text, sub)); }),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '🎓  BRANCH-WISE ENGINEERING TRACK',
+                        style: GoogleFonts.inter(
+                          color: orange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .6,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        'Hands-On Engineering Projects & AI Guidance',
+                        style: GoogleFonts.inter(
+                          color: text,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Explore real-world projects with step-by-step roadmaps, code hints, troubleshooting guides, and our Sophia AI Mentor.',
+                        style: GoogleFonts.inter(
+                          color: sub,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 24),
+                SizedBox(
+                  width: 330,
+                  child: TextField(
+                    onChanged: (value) => setState(() => search = value),
+                    style: GoogleFonts.inter(
+                      color: text,
+                      fontSize: 12,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search projects, skills, tech...',
+                      hintStyle: GoogleFonts.inter(
+                        color: sub,
+                        fontSize: 12,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: sub,
+                        size: 18,
+                      ),
+                      filled: true,
+                      fillColor: card,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(13),
+                        borderSide: BorderSide(
+                          color: dark
+                              ? const Color(0xFF273244)
+                              : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(13),
+                        borderSide: BorderSide(
+                          color: dark
+                              ? const Color(0xFF273244)
+                              : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: branches.map((b) {
+                  final active = branch == b.code;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => setState(() => branch = b.code),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: active ? orange : card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: active
+                                ? orange
+                                : (dark
+                                    ? const Color(0xFF273244)
+                                    : const Color(0xFFE2E8F0)),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              b.label,
+                              style: GoogleFonts.inter(
+                                color: active ? Colors.white : text,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (b.code != 'ALL') ...[
+                              const SizedBox(width: 7),
+                              Text(
+                                '${b.count}',
+                                style: GoogleFonts.inter(
+                                  color: active ? Colors.white : sub,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (filtered.isEmpty)
+              _empty(text, sub, card)
+            else
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 1000 ? 2 : 1;
+
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: filtered.length,
+                    gridDelegate:
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      crossAxisSpacing: 22,
+                      mainAxisSpacing: 22,
+                      mainAxisExtent: 264,
+                    ),
+                    itemBuilder: (context, index) {
+                      return _projectCard(
+                        filtered[index],
+                        card,
+                        text,
+                        sub,
+                      );
+                    },
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -826,40 +986,15 @@ class _SubmitDeliverableScreenState extends State<SubmitDeliverableScreen> {
       );
 
   Future<void> pickFiles() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg', 'zip'],
-      );
+    if (!mounted) return;
 
-      if (result == null) return;
-
-      final accepted = <String>[];
-      for (final f in result.files) {
-        if (f.size <= 25 * 1024 * 1024) {
-          accepted.add(f.name);
-        }
-      }
-
-      setState(() {
-        files.addAll(accepted.where((x) => !files.contains(x)));
-      });
-
-      final skipped = result.files.length - accepted.length;
-      if (skipped > 0 && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$skipped file(s) exceeded the 25MB limit.'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('File picker error: $e')),
-      );
-    }
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        'File upload is temporarily unavailable.',
+        ),
+      ),
+    );
   }
 
   Future<void> submit() async {

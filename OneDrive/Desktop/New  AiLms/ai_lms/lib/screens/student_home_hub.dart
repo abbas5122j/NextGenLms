@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'course_directory_screen.dart';
+import 'projects_section.dart';
 
 // =============================================================================
 // MOCK DATA MODELS & DATA STORES
@@ -303,7 +304,7 @@ class StudentHomeHubScreen extends StatefulWidget {
 }
 
 class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
-  int activeSidebarIndex = 0; // 0: Home Hub, 1: LMS Coding, 2: Gamify Learnings, 3: Courses
+  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects
   bool isSidebarCollapsed = false;
   bool isDarkMode = false;
 
@@ -349,64 +350,60 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
     }
 
     if (activeSidebarIndex == 3) {
-      final bgColor =
-        isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F6FB);
+      return CourseDirectoryScreen(
+        userName: widget.userName,
+        isDarkMode: isDarkMode,
+        onToggleDarkMode: () => setState(() => isDarkMode = !isDarkMode),
+        onSelectSidebarIndex: (index) =>
+            setState(() => activeSidebarIndex = index),
+        onSignOut: widget.onSignOut,
+      );
+    }
 
-      final cardBgColor =
-        isDarkMode ? const Color(0xFF131927) : Colors.white;
+    if (activeSidebarIndex == 4) {
+      final projectBg =
+          isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F6FB);
+      final projectCard =
+          isDarkMode ? const Color(0xFF131927) : Colors.white;
+      final projectText =
+          isDarkMode ? Colors.white : const Color(0xFF0F172A);
+      final projectSub =
+          isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+      final projectBorder =
+          isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
 
-      final primaryTextColor =
-        isDarkMode ? Colors.white : const Color(0xFF0F172A);
-
-      final subTextColor =
-        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-
-      final borderThemeColor =
-        isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-
-  return Scaffold(
-    backgroundColor: bgColor,
-    body: Row(
-      children: [
-        // ==========================================================
-        // STUDENT HOME HUB SIDEBAR
-        // ==========================================================
-        _buildSidebar(
-          cardBgColor,
-          primaryTextColor,
-          subTextColor,
-          borderThemeColor,
+      return Scaffold(
+        backgroundColor: projectBg,
+        body: Row(
+          children: [
+            _buildSidebar(
+              projectCard,
+              projectText,
+              projectSub,
+              projectBorder,
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  _buildTopHeader(
+                    projectCard,
+                    projectText,
+                    projectSub,
+                    projectBorder,
+                  ),
+                  Expanded(
+                    child: ProjectsSection(
+                      userName: widget.userName,
+                      isDarkMode: isDarkMode,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-
-        // ==========================================================
-        // COURSE DIRECTORY
-        // ==========================================================
-        Expanded(
-          child: CourseDirectoryScreen(
-            userName: widget.userName,
-            isDarkMode: isDarkMode,
-            onToggleDarkMode: () {
-              setState(() {
-                isDarkMode = !isDarkMode;
-              });
-            },
-            onSelectSidebarIndex: (index) {
-              setState(() {
-                activeSidebarIndex = index;
-              });
-            },
-            onSignOut: widget.onSignOut,
-
-            // IMPORTANT:
-            // CourseDirectoryScreen previously accepted a `showSidebar` parameter,
-            // which has been removed. Sidebar visibility is now controlled by the
-            // surrounding layout, so the argument has been deleted here.
-          ),
-        ),
-      ],
-    ),
-  );
-}
+      );
+    }
 
     final bgColor = isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F6FB);
     final cardBgColor = isDarkMode ? const Color(0xFF131927) : Colors.white;
