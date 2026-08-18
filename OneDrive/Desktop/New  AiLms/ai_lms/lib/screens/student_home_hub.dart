@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'course_directory_screen.dart';
 import 'projects_section.dart';
+import 'sophia_ai_screen.dart';
+import '../widgets/student_lms_shell.dart';
 
 // =============================================================================
 // MOCK DATA MODELS & DATA STORES
@@ -304,360 +306,172 @@ class StudentHomeHubScreen extends StatefulWidget {
 }
 
 class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
-  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects
-  bool isSidebarCollapsed = false;
+  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor
+  
   bool isDarkMode = false;
 
   DateTime _currentCalendarMonth = DateTime(2026, 8, 1);
   DateTime _selectedDate = DateTime(2026, 8, 9);
 
-  final List<Map<String, dynamic>> sidebarItems = [
-    {'title': 'Home Hub', 'icon': Icons.home_outlined},
-    {'title': 'LMS Coding', 'icon': Icons.code},
-    {'title': 'Gamify Learnings', 'icon': Icons.stars_outlined},
-    {'title': 'Courses', 'icon': Icons.menu_book_outlined},
-    {'title': 'Projects', 'icon': Icons.work_outline},
-    {'title': 'Sophia AI Tutor', 'icon': Icons.psychology_outlined},
-    {'title': 'Voice Assistant', 'icon': Icons.mic_none},
-    {'title': 'Payment History', 'icon': Icons.credit_card},
-    {'title': 'Quizzes', 'icon': Icons.help_outline},
-    {'title': 'Assignment', 'icon': Icons.assignment_outlined},
-    {'title': 'Announcement', 'icon': Icons.campaign_outlined},
-    {'title': 'Certification', 'icon': Icons.workspace_premium_outlined},
-    {'title': 'Report', 'icon': Icons.bar_chart_outlined},
-  ];
-
   @override
   Widget build(BuildContext context) {
-    if (activeSidebarIndex == 1) {
-      return LMSCodingScreen(
-        userName: widget.userName,
-        isDarkMode: isDarkMode,
-        onToggleDarkMode: () => setState(() => isDarkMode = !isDarkMode),
-        onSelectSidebarIndex: (index) => setState(() => activeSidebarIndex = index),
-        onSignOut: widget.onSignOut,
-      );
+    Widget content;
+
+    switch (activeSidebarIndex) {
+      case 1:
+        content = LMSCodingScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+          onToggleDarkMode: () {
+            setState(() => isDarkMode = !isDarkMode);
+          },
+          onSelectSidebarIndex: (index) {
+            setState(() => activeSidebarIndex = index);
+          },
+          onSignOut: widget.onSignOut,
+        );
+        break;
+
+      case 2:
+        content = GamifyLearningsScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+          onToggleDarkMode: () {
+            setState(() => isDarkMode = !isDarkMode);
+          },
+          onSelectSidebarIndex: (index) {
+            setState(() => activeSidebarIndex = index);
+          },
+          onSignOut: widget.onSignOut,
+        );
+        break;
+
+      case 3:
+        content = CourseDirectoryScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+          onToggleDarkMode: () {
+            setState(() => isDarkMode = !isDarkMode);
+          },
+          onSelectSidebarIndex: (index) {
+            setState(() => activeSidebarIndex = index);
+          },
+          onSignOut: widget.onSignOut,
+        );
+        break;
+
+      case 4:
+        content = ProjectsSection(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
+      case 5:
+        content = SophiaAIScreen(
+          userName: widget.userName,
+          selectedCourseTitle: widget.selectedCourseTitle,
+          onExit: () {
+            setState(() => activeSidebarIndex = 0);
+          },
+          onAssessmentComplete: (String assessedLevel) {
+            setState(() => activeSidebarIndex = 5);
+          },
+          isDarkMode: isDarkMode,
+          onToggleDarkMode: () {
+            setState(() => isDarkMode = !isDarkMode);
+          },
+        );
+        break;
+
+      default:
+        content = _buildHomeContent();
     }
 
-    if (activeSidebarIndex == 2) {
-      return GamifyLearningsScreen(
-        userName: widget.userName,
-        isDarkMode: isDarkMode,
-        onToggleDarkMode: () => setState(() => isDarkMode = !isDarkMode),
-        onSelectSidebarIndex: (index) => setState(() => activeSidebarIndex = index),
-        onSignOut: widget.onSignOut,
-      );
-    }
-
-    if (activeSidebarIndex == 3) {
-      return CourseDirectoryScreen(
-        userName: widget.userName,
-        isDarkMode: isDarkMode,
-        onToggleDarkMode: () => setState(() => isDarkMode = !isDarkMode),
-        onSelectSidebarIndex: (index) =>
-            setState(() => activeSidebarIndex = index),
-        onSignOut: widget.onSignOut,
-      );
-    }
-
-    if (activeSidebarIndex == 4) {
-      final projectBg =
-          isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F6FB);
-      final projectCard =
-          isDarkMode ? const Color(0xFF131927) : Colors.white;
-      final projectText =
-          isDarkMode ? Colors.white : const Color(0xFF0F172A);
-      final projectSub =
-          isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-      final projectBorder =
-          isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-
-      return Scaffold(
-        backgroundColor: projectBg,
-        body: Row(
-          children: [
-            _buildSidebar(
-              projectCard,
-              projectText,
-              projectSub,
-              projectBorder,
-            ),
-            Expanded(
-              child: Column(
-                children: [
-                  _buildTopHeader(
-                    projectCard,
-                    projectText,
-                    projectSub,
-                    projectBorder,
-                  ),
-                  Expanded(
-                    child: ProjectsSection(
-                      userName: widget.userName,
-                      isDarkMode: isDarkMode,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final bgColor = isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F6FB);
-    final cardBgColor = isDarkMode ? const Color(0xFF131927) : Colors.white;
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
-    final subTextColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderThemeColor = isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: Row(
-        children: [
-          _buildSidebar(cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopHeader(cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildGreetingBanner(),
-                        const SizedBox(height: 16),
-                        _buildAIInsightBar(),
-                        const SizedBox(height: 24),
-                        _buildGamifyConsole(),
-                        const SizedBox(height: 24),
-                        _buildActiveCourseTracks(cardBgColor, primaryTextColor, subTextColor),
-                        const SizedBox(height: 24),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                children: [
-                                  _buildSkillGraphAndCareerMap(
-                                    cardBgColor,
-                                    primaryTextColor,
-                                    subTextColor,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  _buildPeerLeaderboardCard(
-                                    cardBgColor,
-                                    primaryTextColor,
-                                    subTextColor,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              flex: 2,
-                              child: _buildFullInteractiveCalendar(
-                                cardBgColor,
-                                primaryTextColor,
-                                subTextColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return StudentLmsShell(
+      activeIndex: activeSidebarIndex,
+      userName: widget.userName,
+      isDarkMode: isDarkMode,
+      onToggleDarkMode: () {
+        setState(() => isDarkMode = !isDarkMode);
+      },
+      onSidebarSelected: (index) {
+        setState(() => activeSidebarIndex = index);
+      },
+      onSignOut: widget.onSignOut,
+      child: content,
     );
   }
 
-  Widget _buildSidebar(Color cardBg, Color textPrimary, Color textSub, Color borderCol) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: isSidebarCollapsed ? 70 : 220,
-      color: cardBg,
-      child: Column(
-        children: [
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: borderCol))),
-            child: Row(
-              mainAxisAlignment: isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
+  Widget _buildHomeContent() {
+    final bgColor =
+        isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F6FB);
+    final cardBgColor =
+        isDarkMode ? const Color(0xFF131927) : Colors.white;
+    final primaryTextColor =
+        isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    final subTextColor =
+        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    return Container(
+      color: bgColor,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildGreetingBanner(),
+            const SizedBox(height: 16),
+            _buildAIInsightBar(),
+            const SizedBox(height: 24),
+            _buildGamifyConsole(),
+            const SizedBox(height: 24),
+            _buildActiveCourseTracks(
+              cardBgColor,
+              primaryTextColor,
+              subTextColor,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (!isSidebarCollapsed)
-                  Row(
+                Expanded(
+                  flex: 3,
+                  child: Column(
                     children: [
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22C55E),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: Text('N', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
+                      _buildSkillGraphAndCareerMap(
+                        cardBgColor,
+                        primaryTextColor,
+                        subTextColor,
                       ),
-                      const SizedBox(width: 8),
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
-                          children: const [
-                            TextSpan(text: 'Next Gen ', style: TextStyle(color: Color(0xFF22C55E))),
-                            TextSpan(text: 'LMS', style: TextStyle(color: Color(0xFFEF4444))),
-                          ],
-                        ),
+                      const SizedBox(height: 20),
+                      _buildPeerLeaderboardCard(
+                        cardBgColor,
+                        primaryTextColor,
+                        subTextColor,
                       ),
                     ],
                   ),
-                IconButton(
-                  icon: Icon(
-                    isSidebarCollapsed ? Icons.chevron_right : Icons.chevron_left,
-                    size: 20,
-                    color: textSub,
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  flex: 2,
+                  child: _buildFullInteractiveCalendar(
+                    cardBgColor,
+                    primaryTextColor,
+                    subTextColor,
                   ),
-                  onPressed: () => setState(() => isSidebarCollapsed = !isSidebarCollapsed),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: sidebarItems.length,
-              itemBuilder: (context, index) {
-                final isSelected = activeSidebarIndex == index;
-                final item = sidebarItems[index];
-
-                return Tooltip(
-                  message: isSidebarCollapsed ? item['title'] : '',
-                  child: ListTile(
-                    dense: true,
-                    minLeadingWidth: 24,
-                    leading: Icon(
-                      item['icon'],
-                      size: 18,
-                      color: isSelected ? const Color(0xFFFF5722) : textSub,
-                    ),
-                    title: isSidebarCollapsed
-                        ? null
-                        : Text(
-                            item['title'],
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                              color: isSelected ? const Color(0xFFFF5722) : textPrimary,
-                            ),
-                          ),
-                    selected: isSelected,
-                    onTap: () => setState(() => activeSidebarIndex = index),
-                  ),
-                );
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(border: Border(top: BorderSide(color: borderCol))),
-            child: Column(
-              children: [
-                ListTile(
-                  dense: true,
-                  minLeadingWidth: 24,
-                  leading: const Icon(Icons.settings_outlined, size: 18, color: Color(0xFF64748B)),
-                  title: isSidebarCollapsed
-                      ? null
-                      : Text('Settings', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: textPrimary)),
-                  onTap: () {},
-                ),
-                ListTile(
-                  dense: true,
-                  minLeadingWidth: 24,
-                  leading: const Icon(Icons.logout, size: 18, color: Color(0xFFEF4444)),
-                  title: isSidebarCollapsed
-                      ? null
-                      : Text('Sign Out', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFFEF4444))),
-                  onTap: widget.onSignOut ?? () {},
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTopHeader(Color cardBg, Color textPrimary, Color textSub, Color borderCol) {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      color: cardBg,
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Search courses, projects, concepts...',
-                    style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: Icon(
-              isDarkMode ? Icons.wb_sunny_outlined : Icons.dark_mode_outlined,
-              size: 20,
-              color: isDarkMode ? Colors.amber : const Color(0xFF64748B),
-            ),
-            onPressed: () => setState(() => isDarkMode = !isDarkMode),
-          ),
-          const SizedBox(width: 8),
-          Icon(Icons.notifications_none, size: 20, color: textSub),
-          const SizedBox(width: 16),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: const Color(0xFFFF6B35),
-            child: Text(
-              widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'A',
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.userName,
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: textPrimary),
-              ),
-              Text('Student', style: GoogleFonts.inter(fontSize: 10, color: textSub)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+
+  
 
   Widget _buildGreetingBanner() {
     return Container(
@@ -1280,9 +1094,6 @@ class LMSCodingScreen extends StatefulWidget {
 }
 
 class _LMSCodingScreenState extends State<LMSCodingScreen> {
-  int activeSidebarIndex = 1;
-  bool isSidebarCollapsed = false;
-
   LeetCodeProblem? _activePlaygroundProblem;
 
   String searchQuery = '';
@@ -1292,20 +1103,7 @@ class _LMSCodingScreenState extends State<LMSCodingScreen> {
   bool showTop150Only = false;
   bool showBlind75Only = false;
 
-  final List<Map<String, dynamic>> sidebarItems = [
-    {'title': 'Home Hub', 'icon': Icons.home_outlined},
-    {'title': 'LMS Coding', 'icon': Icons.code},
-    {'title': 'Gamify Learnings', 'icon': Icons.stars_outlined},
-    {'title': 'Courses', 'icon': Icons.menu_book_outlined},
-    {'title': 'Projects', 'icon': Icons.work_outline},
-    {'title': 'Sophia AI Tutor', 'icon': Icons.psychology_outlined},
-    {'title': 'Voice Assistant', 'icon': Icons.mic_none},
-    {'title': 'Payment History', 'icon': Icons.credit_card},
-    {'title': 'Quizzes', 'icon': Icons.help_outline},
-    {'title': 'Assignment', 'icon': Icons.assignment_outlined},
-    {'title': 'Announcement', 'icon': Icons.campaign_outlined},
-    {'title': 'Certification', 'icon': Icons.workspace_premium_outlined},
-  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -1322,11 +1120,21 @@ class _LMSCodingScreenState extends State<LMSCodingScreen> {
       );
     }
 
-    final bgColor = widget.isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F6FB);
-    final cardBgColor = widget.isDarkMode ? const Color(0xFF131927) : Colors.white;
-    final primaryTextColor = widget.isDarkMode ? Colors.white : const Color(0xFF0F172A);
-    final subTextColor = widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderThemeColor = widget.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    final bgColor = widget.isDarkMode
+        ? const Color(0xFF090D16)
+        : const Color(0xFFF4F6FB);
+    final cardBgColor = widget.isDarkMode
+        ? const Color(0xFF131927)
+        : Colors.white;
+    final primaryTextColor = widget.isDarkMode
+        ? Colors.white
+        : const Color(0xFF0F172A);
+    final subTextColor = widget.isDarkMode
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+    final borderThemeColor = widget.isDarkMode
+        ? const Color(0xFF1E293B)
+        : const Color(0xFFE2E8F0);
 
     final filteredProblems = LeetCodeProblemsData.problems.where((p) {
       if (searchQuery.isNotEmpty &&
@@ -1334,10 +1142,12 @@ class _LMSCodingScreenState extends State<LMSCodingScreen> {
           !p.id.toString().contains(searchQuery)) {
         return false;
       }
-      if (selectedCategory != 'All Categories (28)' && p.category != selectedCategory.replaceAll(' (28)', '')) {
+      if (selectedCategory != 'All Categories (28)' &&
+          p.category != selectedCategory.replaceAll(' (28)', '')) {
         return false;
       }
-      if (selectedDifficulty != 'All Difficulty' && p.difficulty != selectedDifficulty) {
+      if (selectedDifficulty != 'All Difficulty' &&
+          p.difficulty != selectedDifficulty) {
         return false;
       }
       if (selectedStatus == 'Solved' && !p.isSolved) return false;
@@ -1347,222 +1157,42 @@ class _LMSCodingScreenState extends State<LMSCodingScreen> {
       return true;
     }).toList();
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: Row(
-        children: [
-          _buildSidebar(cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopHeader(cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeroHeaderCard(),
-                        const SizedBox(height: 20),
-                        _buildNavigationTabs(),
-                        const SizedBox(height: 20),
-                        _buildFilterAndSearchCard(cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-                        const SizedBox(height: 16),
-                        _buildProblemsTable(filteredProblems, cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebar(Color cardBg, Color textPrimary, Color textSub, Color borderCol) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: isSidebarCollapsed ? 70 : 220,
-      color: cardBg,
-      child: Column(
-        children: [
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: borderCol))),
-            child: Row(
-              mainAxisAlignment: isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
-              children: [
-                if (!isSidebarCollapsed)
-                  Row(
-                    children: [
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22C55E),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: Text('N', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
-                          children: const [
-                            TextSpan(text: 'Next Gen ', style: TextStyle(color: Color(0xFF22C55E))),
-                            TextSpan(text: 'LMS', style: TextStyle(color: Color(0xFFEF4444))),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                IconButton(
-                  icon: Icon(
-                    isSidebarCollapsed ? Icons.chevron_right : Icons.chevron_left,
-                    size: 20,
-                    color: textSub,
-                  ),
-                  onPressed: () => setState(() => isSidebarCollapsed = !isSidebarCollapsed),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: sidebarItems.length,
-              itemBuilder: (context, index) {
-                final isSelected = activeSidebarIndex == index;
-                final item = sidebarItems[index];
-
-                return Tooltip(
-                  message: isSidebarCollapsed ? item['title'] : '',
-                  child: ListTile(
-                    dense: true,
-                    minLeadingWidth: 24,
-                    leading: Icon(
-                      item['icon'],
-                      size: 18,
-                      color: isSelected ? const Color(0xFFFF5722) : textSub,
-                    ),
-                    title: isSidebarCollapsed
-                        ? null
-                        : Text(
-                            item['title'],
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                              color: isSelected ? const Color(0xFFFF5722) : textPrimary,
-                            ),
-                          ),
-                    selected: isSelected,
-                    onTap: () {
-                      widget.onSelectSidebarIndex(index);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(border: Border(top: BorderSide(color: borderCol))),
-            child: Column(
-              children: [
-                ListTile(
-                  dense: true,
-                  minLeadingWidth: 24,
-                  leading: const Icon(Icons.settings_outlined, size: 18, color: Color(0xFF64748B)),
-                  title: isSidebarCollapsed
-                      ? null
-                      : Text('Settings', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: textPrimary)),
-                  onTap: () {},
-                ),
-                ListTile(
-                  dense: true,
-                  minLeadingWidth: 24,
-                  leading: const Icon(Icons.logout, size: 18, color: Color(0xFFEF4444)),
-                  title: isSidebarCollapsed
-                      ? null
-                      : Text('Sign Out', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFFEF4444))),
-                  onTap: widget.onSignOut ?? () {},
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopHeader(Color cardBg, Color textPrimary, Color textSub, Color borderCol) {
     return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      color: cardBg,
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: widget.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Search courses, projects, concepts...',
-                    style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: Icon(
-              widget.isDarkMode ? Icons.wb_sunny_outlined : Icons.dark_mode_outlined,
-              size: 20,
-              color: widget.isDarkMode ? Colors.amber : const Color(0xFF64748B),
-            ),
-            onPressed: widget.onToggleDarkMode,
-          ),
-          const SizedBox(width: 8),
-          Icon(Icons.notifications_none, size: 20, color: textSub),
-          const SizedBox(width: 16),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: const Color(0xFFFF6B35),
-            child: Text(
-              widget.userName.isNotEmpty ? widget.userName.substring(0, widget.userName.length >= 2 ? 2 : 1).toUpperCase() : 'AB',
-              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        color: bgColor,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.userName,
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: textPrimary),
+              _buildHeroHeaderCard(),
+              const SizedBox(height: 20),
+              _buildNavigationTabs(),
+              const SizedBox(height: 20),
+              _buildFilterAndSearchCard(
+                cardBgColor,
+                primaryTextColor,
+                subTextColor,
+                borderThemeColor,
               ),
-              Text('Student', style: GoogleFonts.inter(fontSize: 10, color: textSub)),
+              const SizedBox(height: 16),
+              _buildProblemsTable(
+                filteredProblems,
+                cardBgColor,
+                primaryTextColor,
+                subTextColor,
+                borderThemeColor,
+              ),
             ],
           ),
-        ],
-      ),
-    );
+        ),
+      );;
   }
+
+
+
+  
+
+  
 
   Widget _buildHeroHeaderCard() {
     return Container(
@@ -2672,9 +2302,6 @@ class GamifyLearningsScreen extends StatefulWidget {
 }
 
 class _GamifyLearningsScreenState extends State<GamifyLearningsScreen> {
-  int activeSidebarIndex = 2;
-  bool isSidebarCollapsed = false;
-
   int selectedLevelIndex = 0;
 
   final List<String> availableCodeBlocks = [
@@ -2757,72 +2384,68 @@ class _GamifyLearningsScreenState extends State<GamifyLearningsScreen> {
     },
   ];
 
-  final List<Map<String, dynamic>> sidebarItems = [
-    {'title': 'Home Hub', 'icon': Icons.home_outlined},
-    {'title': 'LMS Coding', 'icon': Icons.code},
-    {'title': 'Gamify Learnings', 'icon': Icons.stars_outlined},
-    {'title': 'Courses', 'icon': Icons.menu_book_outlined},
-    {'title': 'Projects', 'icon': Icons.work_outline},
-    {'title': 'Sophia AI Tutor', 'icon': Icons.psychology_outlined},
-    {'title': 'Voice Assistant', 'icon': Icons.mic_none},
-    {'title': 'Payment History', 'icon': Icons.credit_card},
-    {'title': 'Quizzes', 'icon': Icons.help_outline},
-    {'title': 'Assignment', 'icon': Icons.assignment_outlined},
-    {'title': 'Announcement', 'icon': Icons.campaign_outlined},
-    {'title': 'Certification', 'icon': Icons.workspace_premium_outlined},
-  ];
+  
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = widget.isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF8FAFC);
-    final cardBgColor = widget.isDarkMode ? const Color(0xFF131927) : Colors.white;
-    final primaryTextColor = widget.isDarkMode ? Colors.white : const Color(0xFF0F172A);
-    final subTextColor = widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderThemeColor = widget.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    final bgColor = widget.isDarkMode
+        ? const Color(0xFF090D16)
+        : const Color(0xFFF8FAFC);
+    final cardBgColor = widget.isDarkMode
+        ? const Color(0xFF131927)
+        : Colors.white;
+    final primaryTextColor = widget.isDarkMode
+        ? Colors.white
+        : const Color(0xFF0F172A);
+    final subTextColor = widget.isDarkMode
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+    final borderThemeColor = widget.isDarkMode
+        ? const Color(0xFF1E293B)
+        : const Color(0xFFE2E8F0);
 
     final currentLevelData = levelsList[selectedLevelIndex];
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: Row(
-        children: [
-          _buildSidebar(cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopHeader(cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(28.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeaderHeroBar(primaryTextColor, subTextColor),
-                        const SizedBox(height: 28),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 380,
-                              child: _buildProgressBoard(cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-                            ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              child: _buildMissionQuestPanel(currentLevelData, cardBgColor, primaryTextColor, subTextColor, borderThemeColor),
-                            ),
-                          ],
-                        )
-                      ],
+    return Container(
+        color: bgColor,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(28.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeaderHeroBar(primaryTextColor, subTextColor),
+              const SizedBox(height: 28),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 380,
+                    child: _buildProgressBoard(
+                      cardBgColor,
+                      primaryTextColor,
+                      subTextColor,
+                      borderThemeColor,
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: _buildMissionQuestPanel(
+                      currentLevelData,
+                      cardBgColor,
+                      primaryTextColor,
+                      subTextColor,
+                      borderThemeColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ),
+      );;
   }
+
+
 
   Widget _buildHeaderHeroBar(Color textPrimary, Color textSub) {
     return Wrap(
@@ -3406,188 +3029,9 @@ class _GamifyLearningsScreenState extends State<GamifyLearningsScreen> {
     );
   }
 
-  Widget _buildSidebar(Color cardBg, Color textPrimary, Color textSub, Color borderCol) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: isSidebarCollapsed ? 70 : 220,
-      color: cardBg,
-      child: Column(
-        children: [
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: borderCol))),
-            child: Row(
-              mainAxisAlignment: isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
-              children: [
-                if (!isSidebarCollapsed)
-                  Row(
-                    children: [
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22C55E),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: Text('N', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
-                          children: const [
-                            TextSpan(text: 'Next Gen ', style: TextStyle(color: Color(0xFF22C55E))),
-                            TextSpan(text: 'LMS', style: TextStyle(color: Color(0xFFEF4444))),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                IconButton(
-                  icon: Icon(
-                    isSidebarCollapsed ? Icons.chevron_right : Icons.chevron_left,
-                    size: 20,
-                    color: textSub,
-                  ),
-                  onPressed: () => setState(() => isSidebarCollapsed = !isSidebarCollapsed),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: sidebarItems.length,
-              itemBuilder: (context, index) {
-                final isSelected = activeSidebarIndex == index;
-                final item = sidebarItems[index];
+  
 
-                return Tooltip(
-                  message: isSidebarCollapsed ? item['title'] : '',
-                  child: ListTile(
-                    dense: true,
-                    minLeadingWidth: 24,
-                    leading: Icon(
-                      item['icon'],
-                      size: 18,
-                      color: isSelected ? const Color(0xFFFF5722) : textSub,
-                    ),
-                    title: isSidebarCollapsed
-                        ? null
-                        : Text(
-                            item['title'],
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                              color: isSelected ? const Color(0xFFFF5722) : textPrimary,
-                            ),
-                          ),
-                    selected: isSelected,
-                    onTap: () {
-                      widget.onSelectSidebarIndex(index);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(border: Border(top: BorderSide(color: borderCol))),
-            child: Column(
-              children: [
-                ListTile(
-                  dense: true,
-                  minLeadingWidth: 24,
-                  leading: const Icon(Icons.settings_outlined, size: 18, color: Color(0xFF64748B)),
-                  title: isSidebarCollapsed
-                      ? null
-                      : Text('Settings', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: textPrimary)),
-                  onTap: () {},
-                ),
-                ListTile(
-                  dense: true,
-                  minLeadingWidth: 24,
-                  leading: const Icon(Icons.logout, size: 18, color: Color(0xFFEF4444)),
-                  title: isSidebarCollapsed
-                      ? null
-                      : Text('Sign Out', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFFEF4444))),
-                  onTap: widget.onSignOut ?? () {},
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopHeader(Color cardBg, Color textPrimary, Color textSub, Color borderCol) {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      color: cardBg,
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: widget.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Search courses, projects, concepts...',
-                    style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: Icon(
-              widget.isDarkMode ? Icons.wb_sunny_outlined : Icons.dark_mode_outlined,
-              size: 20,
-              color: widget.isDarkMode ? Colors.amber : const Color(0xFF64748B),
-            ),
-            onPressed: widget.onToggleDarkMode,
-          ),
-          const SizedBox(width: 8),
-          Icon(Icons.notifications_none, size: 20, color: textSub),
-          const SizedBox(width: 16),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: const Color(0xFFFF6B35),
-            child: Text(
-              widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'A',
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.userName,
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: textPrimary),
-              ),
-              Text('Student', style: GoogleFonts.inter(fontSize: 10, color: textSub)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  
 }
 
 // =============================================================================

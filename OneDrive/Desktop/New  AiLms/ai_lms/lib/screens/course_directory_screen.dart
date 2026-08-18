@@ -10,8 +10,6 @@ class CourseDirectoryScreen extends StatefulWidget {
   final VoidCallback? onToggleDarkMode;
   final ValueChanged<int>? onSelectSidebarIndex;
   final VoidCallback? onSignOut;
-  final bool showSidebar;
-  
 
   const CourseDirectoryScreen({
     super.key,
@@ -20,7 +18,6 @@ class CourseDirectoryScreen extends StatefulWidget {
     required this.onToggleDarkMode,
     required this.onSelectSidebarIndex,
     this.onSignOut,
-    this.showSidebar = true,
   });
 
   @override
@@ -30,8 +27,6 @@ class CourseDirectoryScreen extends StatefulWidget {
 
 class _CourseDirectoryScreenState
     extends State<CourseDirectoryScreen> {
-  // The LMS shell/sidebar is owned by the parent application.
-  // This screen only swaps its CONTENT between directory and details.
   Course? selectedCourse;
   int detailTab = 0;
   // ==========================================================
@@ -130,17 +125,23 @@ class _CourseDirectoryScreenState
     final secondaryText =
         dark ? const Color(0xFF94A3B8) : textMuted;
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: selectedCourse == null
-          ? _buildDirectoryContent(cardColor, primaryText, secondaryText)
+    // IMPORTANT:
+    // This screen intentionally contains ONLY Course Directory content.
+    // StudentHomeHub owns the single global sidebar/topbar.
+    return Container(
+      color: bgColor,
+      child: selectedCourse == null
+          ? _buildDirectoryContent(
+              cardColor,
+              primaryText,
+              secondaryText,
+            )
           : _buildCourseDetailContent(
               selectedCourse!,
               cardColor,
               primaryText,
               secondaryText,
             ),
-      floatingActionButton: _buildSophiaButton(),
     );
   }
 
@@ -208,11 +209,7 @@ class _CourseDirectoryScreenState
   }
 
   // ==========================================================
-  // INLINE COURSE DETAILS
-  //
-  // No Drawer, NavigationRail, sidebar or second LMS shell is
-  // created here. The existing application sidebar stays exactly
-  // where it is; only the content area changes.
+  // COURSE DETAILS — content only
   // ==========================================================
 
   Widget _buildCourseDetailContent(
