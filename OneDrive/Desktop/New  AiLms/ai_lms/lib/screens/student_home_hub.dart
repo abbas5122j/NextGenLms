@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'course_directory_screen.dart';
 import 'projects_section.dart';
 import 'sophia_ai_screen.dart';
+import 'voice_assistant_screen.dart';
 import '../widgets/student_lms_shell.dart';
 
 // =============================================================================
@@ -306,7 +307,7 @@ class StudentHomeHubScreen extends StatefulWidget {
 }
 
 class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
-  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor
+  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor, 6 Voice Assistant
   
   bool isDarkMode = false;
 
@@ -384,10 +385,24 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
         );
         break;
 
+      case 6:
+        // Native Voice Assistant
+        //
+        // StudentLmsShell already owns the global sidebar/top header.
+        // Therefore this screen is only the page content and will not
+        // create a second sidebar/header.
+        content = VoiceAssistantScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
       default:
         content = _buildHomeContent();
     }
 
+    // Voice Assistant uses sidebar index 6. StudentLmsShell receives the
+    // same index, so clicking "Voice Assistant" highlights the correct item.
     return StudentLmsShell(
       activeIndex: activeSidebarIndex,
       userName: widget.userName,
