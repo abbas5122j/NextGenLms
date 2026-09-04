@@ -935,6 +935,41 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
   }
 
   @override
+  void didUpdateWidget(covariant QuizzesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final courseChanged =
+        oldWidget.initialCourseId != widget.initialCourseId ||
+        oldWidget.initialCourseTitle != widget.initialCourseTitle;
+
+    if (!courseChanged) return;
+
+    final initialQuiz = QuizCatalog.quizForCourse(
+      courseId: widget.initialCourseId,
+      courseTitle: widget.initialCourseTitle,
+    );
+
+    _timer?.cancel();
+
+    if (initialQuiz != null) {
+      setState(() {
+        _selectedQuiz = initialQuiz;
+        _answers.clear();
+        _questionIndex = 0;
+        _score = 0;
+        _pageState = _QuizPageState.instructions;
+      });
+    } else {
+      setState(() {
+        _answers.clear();
+        _questionIndex = 0;
+        _score = 0;
+        _pageState = _QuizPageState.list;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
@@ -1005,18 +1040,18 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
 
   Widget _buildListPage() {
     return SingleChildScrollView(
-      key: const ValueKey('quiz-list'),
+      key: const ValueKey('quiz-list-scroll'),
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 30),
+      padding: const EdgeInsets.only(bottom: 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children:[
-          _buildInstructorExamSection(),
+        children: [
+        _buildInstructorExamSection(),
 
-          const SizedBox(height: 34),
+        const SizedBox(height: 34),
 
-          Container(
-            height: 1,
+        Container(
+          height: 1,
           color: widget.isDarkMode
               ? const Color(0xFF334155)
               : const Color(0xFFCBD5E1),
@@ -1126,7 +1161,8 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _filteredQuizzes.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate:
+                  SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: columns,
                 crossAxisSpacing: 20,
                 mainAxisSpacing: 20,
@@ -1141,8 +1177,8 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
           },
         ),
       ],
-      ),
-    );
+    ),
+  );
   }
 
   // ==========================================================================
@@ -1553,7 +1589,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      'BACK',
+                      'Back to Quiz Directory',
                       style: GoogleFonts.inter(
                         color: const Color(0xFFFF5A5F),
                         fontSize: 11,
@@ -1733,40 +1769,38 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                              'Back to Quiz Directory',
-                              style: GoogleFonts.inter(
-                                color: _subText,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                              ),
+                            'Back to Quiz Directory',
+                            style: GoogleFonts.inter(
+                              color: _subText,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-
-                    const Spacer(),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEEF0),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        _formatRemainingTime(),
-                        style: GoogleFonts.firaCode(
-                          color: const Color(0xFFFF5A5F),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                        ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEEF0),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      _formatRemainingTime(),
+                      style: GoogleFonts.firaCode(
+                        color: const Color(0xFFFF5A5F),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
 
               const SizedBox(height: 14),
 
@@ -2232,6 +2266,8 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
     setState(() {
       _answers.clear();
       _questionIndex = 0;
+      _secondsRemaining = 0;
+      _score = 0;
       _pageState = _QuizPageState.list;
     });
   }

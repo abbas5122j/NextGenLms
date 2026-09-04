@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../data/course_data.dart';
 import '../models/course_model.dart';
-import 'quizzes_screen.dart';
 
 class CourseDirectoryScreen extends StatefulWidget {
   final String userName;
@@ -12,6 +11,9 @@ class CourseDirectoryScreen extends StatefulWidget {
   final ValueChanged<int>? onSelectSidebarIndex;
   final VoidCallback? onSignOut;
 
+  /// Called by the parent shell when the user chooses Take Practice Quiz.
+  final ValueChanged<Course>? onPracticeQuiz;
+
   const CourseDirectoryScreen({
     super.key,
     required this.userName,
@@ -19,6 +21,7 @@ class CourseDirectoryScreen extends StatefulWidget {
     required this.onToggleDarkMode,
     required this.onSelectSidebarIndex,
     this.onSignOut,
+    this.onPracticeQuiz,
 
   });
 
@@ -1582,15 +1585,15 @@ class _CourseDirectoryScreenState
   }
 
   void _practiceQuiz(Course course) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => QuizzesScreen(
-          userName: widget.userName,
-          isDarkMode: widget.isDarkMode,
-          initialCourseId: course.id,
-          initialCourseTitle: course.title,
-        ),
+    if (widget.onPracticeQuiz != null) {
+      widget.onPracticeQuiz!(course);
+      return;
+    }
+
+    // Keeps the screen usable if opened outside StudentHomeHubScreen.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Practice quiz for ${course.title} is ready.'),
       ),
     );
   }

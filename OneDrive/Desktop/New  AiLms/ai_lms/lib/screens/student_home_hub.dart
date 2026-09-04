@@ -9,6 +9,7 @@ import 'voice_assistant_screen.dart';
 import '../widgets/student_lms_shell.dart';
 import 'payment_history_screen.dart';
 import 'quizzes_screen.dart';
+
 // =============================================================================
 // MOCK DATA MODELS & DATA STORES
 // =============================================================================
@@ -308,9 +309,13 @@ class StudentHomeHubScreen extends StatefulWidget {
 }
 
 class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
-  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor, 6 Voice Assistant, 7 Payment History
+  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor, 6 Voice Assistant, 7 Payment History, 8 Quizzes, 9 Assignment, 10 Announcement, 11 Certification, 12 Report
   
   bool isDarkMode = false;
+
+  // Course selected from Courses -> Take Practice Quiz.
+  String? _quizCourseId;
+  String? _quizCourseTitle;
 
   DateTime _currentCalendarMonth = DateTime(2026, 8, 1);
   DateTime _selectedDate = DateTime(2026, 8, 9);
@@ -355,8 +360,13 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
           onToggleDarkMode: () {
             setState(() => isDarkMode = !isDarkMode);
           },
-          onSelectSidebarIndex: (index) {
-            setState(() => activeSidebarIndex = index);
+          onSelectSidebarIndex: _selectSidebarIndex,
+          onPracticeQuiz: (course) {
+            setState(() {
+              _quizCourseId = course.id;
+              _quizCourseTitle = course.title;
+              activeSidebarIndex = 8;
+            });
           },
           onSignOut: widget.onSignOut,
         );
@@ -397,9 +407,8 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
           isDarkMode: isDarkMode,
         );
         break;
+
       case 7:
-        // StudentLmsShell already owns the global sidebar/top header.
-        // Therefore PaymentHistoryScreen is only the page content.
         content = PaymentHistoryScreen(
           userName: widget.userName,
           isDarkMode: isDarkMode,
@@ -410,12 +419,10 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
         content = QuizzesScreen(
           userName: widget.userName,
           isDarkMode: isDarkMode,
-          onSelectSidebarIndex: (index) {
-            setState(() {
-              activeSidebarIndex = index;
-            });
-          },
+          onSelectSidebarIndex: _selectSidebarIndex,
           onSignOut: widget.onSignOut,
+          initialCourseId: _quizCourseId,
+          initialCourseTitle: _quizCourseTitle,
         );
         break;
 
@@ -432,12 +439,23 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
       onToggleDarkMode: () {
         setState(() => isDarkMode = !isDarkMode);
       },
-      onSidebarSelected: (index) {
-        setState(() => activeSidebarIndex = index);
-      },
+      onSidebarSelected: _selectSidebarIndex,
       onSignOut: widget.onSignOut,
       child: content,
     );
+  }
+
+  void _selectSidebarIndex(int index) {
+    setState(() {
+      activeSidebarIndex = index;
+
+      // A normal sidebar click on Quizzes opens the directory.
+      // The Courses screen is the only place that supplies a course target.
+      if (index != 8) {
+        _quizCourseId = null;
+        _quizCourseTitle = null;
+      }
+    });
   }
 
   Widget _buildHomeContent() {
@@ -1222,7 +1240,7 @@ class _LMSCodingScreenState extends State<LMSCodingScreen> {
             ],
           ),
         ),
-      );
+      );;
   }
 
 
@@ -2479,7 +2497,7 @@ class _GamifyLearningsScreenState extends State<GamifyLearningsScreen> {
             ],
           ),
         ),
-      );
+      );;
   }
 
 
