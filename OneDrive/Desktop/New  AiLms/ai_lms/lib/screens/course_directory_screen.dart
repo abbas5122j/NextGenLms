@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../data/course_data.dart';
 import '../models/course_model.dart';
+import 'quizzes_screen.dart';
 
 class CourseDirectoryScreen extends StatefulWidget {
   final String userName;
@@ -18,6 +19,7 @@ class CourseDirectoryScreen extends StatefulWidget {
     required this.onToggleDarkMode,
     required this.onSelectSidebarIndex,
     this.onSignOut,
+
   });
 
   @override
@@ -1580,10 +1582,14 @@ class _CourseDirectoryScreenState
   }
 
   void _practiceQuiz(Course course) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Practice quiz for ${course.title} is ready to connect.',
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QuizzesScreen(
+          userName: widget.userName,
+          isDarkMode: widget.isDarkMode,
+          initialCourseId: course.id,
+          initialCourseTitle: course.title,
         ),
       ),
     );

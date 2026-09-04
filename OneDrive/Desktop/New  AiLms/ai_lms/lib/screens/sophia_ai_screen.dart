@@ -89,7 +89,7 @@ class _SophiaAIScreenState
   // ==========================================================
 
   final List<_DiagramData> diagrams = [
-    _DiagramData(
+    const _DiagramData(
       category: 'Web Development',
       title: 'How an API Request Works',
       diagram: '''
@@ -117,7 +117,7 @@ class _SophiaAIScreenState
           'the application and the server.',
     ),
 
-    _DiagramData(
+    const _DiagramData(
       category: 'Programming',
       title: 'Recursion Flow',
       diagram: '''
@@ -144,7 +144,7 @@ class _SophiaAIScreenState
           'smaller version of the original problem.',
     ),
 
-    _DiagramData(
+    const _DiagramData(
       category: 'Artificial Intelligence',
       title: 'Machine Learning Pipeline',
       diagram: '''
@@ -170,7 +170,7 @@ class _SophiaAIScreenState
           'prepared data and uses those patterns to predict.',
     ),
 
-    _DiagramData(
+    const _DiagramData(
       category: 'Computer Science',
       title: 'Database Query Flow',
       diagram: '''
@@ -202,42 +202,42 @@ class _SophiaAIScreenState
   // ==========================================================
 
   final List<_VideoData> videos = [
-    _VideoData(
+    const _VideoData(
       title: 'Programming Fundamentals',
       category: 'Programming',
       level: 'Beginner',
       youtubeUrl:
           'https://www.youtube.com/results?search_query=programming+fundamentals',
     ),
-    _VideoData(
+    const _VideoData(
       title: 'Data Structures & Algorithms',
       category: 'DSA',
       level: 'Intermediate',
       youtubeUrl:
           'https://www.youtube.com/results?search_query=data+structures+algorithms',
     ),
-    _VideoData(
+    const _VideoData(
       title: 'Machine Learning Basics',
       category: 'AI / ML',
       level: 'Beginner',
       youtubeUrl:
           'https://www.youtube.com/results?search_query=machine+learning+basics',
     ),
-    _VideoData(
+    const _VideoData(
       title: 'React & Modern Web Development',
       category: 'Web Development',
       level: 'Intermediate',
       youtubeUrl:
           'https://www.youtube.com/results?search_query=react+web+development',
     ),
-    _VideoData(
+    const _VideoData(
       title: 'Python for Data Science',
       category: 'Data Science',
       level: 'Beginner',
       youtubeUrl:
           'https://www.youtube.com/results?search_query=python+data+science',
     ),
-    _VideoData(
+    const _VideoData(
       title: 'SQL & Database Fundamentals',
       category: 'Database',
       level: 'Beginner',
@@ -423,8 +423,8 @@ class _SophiaAIScreenState
                             ? [
                                 BoxShadow(
                                   color: orange
-                                      .withOpacity(
-                                    .18,
+                                      .withValues(
+                                    alpha: .18,
                                   ),
                                   blurRadius:
                                       10,
@@ -573,7 +573,7 @@ class _SophiaAIScreenState
                       messages.clear();
 
                       messages.add(
-                        _SophiaMessage(
+                        const _SophiaMessage(
                           isUser: false,
                           text:
                               '👋 Chat cleared. What would you like to learn?',
@@ -1129,8 +1129,8 @@ or
               gradient:
                   LinearGradient(
                 colors: [
-                  violet.withOpacity(.12),
-                  orange.withOpacity(.08),
+                  violet.withValues(alpha: .12),
+                  orange.withValues(alpha: .08),
                 ],
               ),
               borderRadius:
@@ -1139,7 +1139,7 @@ or
               ),
               border: Border.all(
                 color:
-                    violet.withOpacity(.18),
+                    violet.withValues(alpha: .18),
               ),
             ),
             child: Row(
@@ -1442,7 +1442,7 @@ or
         borderRadius:
             BorderRadius.circular(18),
         border: Border.all(
-          color: violet.withOpacity(.35),
+          color: violet.withValues(alpha: .35),
         ),
       ),
       child: Column(
@@ -1534,8 +1534,8 @@ or
                   LinearGradient(
                 colors: [
                   Colors.red
-                      .withOpacity(.08),
-                  orange.withOpacity(.08),
+                      .withValues(alpha: .08),
+                  orange.withValues(alpha: .08),
                 ],
               ),
               borderRadius:
@@ -1544,7 +1544,7 @@ or
               ),
               border: Border.all(
                 color: Colors.red
-                    .withOpacity(.16),
+                    .withValues(alpha: .16),
               ),
             ),
             child: const Row(

@@ -794,8 +794,8 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              widget.isDarkMode ? 0.08 : 0.04,
+            color: Colors.black.withValues(
+              alpha: widget.isDarkMode ? 0.08 : 0.04,
             ),
             blurRadius: 18,
             offset: const Offset(0, 8),
@@ -1076,7 +1076,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> {
                   height: 92 + (_soundLevel * 2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFFF5A63).withOpacity(0.08),
+                    color: const Color(0xFFFF5A63).withValues(alpha: 0.08),
                   ),
                 ),
               Material(
@@ -1098,8 +1098,8 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> {
                       boxShadow: [
                         BoxShadow(
                           color: active
-                              ? const Color(0xFFFF5A63).withOpacity(0.25)
-                              : Colors.black.withOpacity(0.08),
+                              ? const Color(0xFFFF5A63).withValues(alpha: 0.25)
+                              : Colors.black.withValues(alpha: 0.08),
                           blurRadius: 18,
                           spreadRadius: 3,
                         ),
@@ -1634,7 +1634,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> {
         vertical: 15,
       ),
       decoration: BoxDecoration(
-        color: card.withOpacity(widget.isDarkMode ? 0.55 : 0.88),
+        color: card.withValues(alpha: widget.isDarkMode ? 0.55 : 0.88),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: widget.isDarkMode

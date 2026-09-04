@@ -1963,7 +1963,7 @@ class Sophia extends StatefulWidget {
 class _SophiaState extends State<Sophia> {
   final input = TextEditingController();
   final messages = <_ChatMessage>[
-    _ChatMessage(
+    const _ChatMessage(
       false,
       '👋 Hi! I’m Sophia. Ask me about architecture, debugging, roadmap steps, testing, or project submission.',
     ),

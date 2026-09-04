@@ -7,7 +7,8 @@ import 'projects_section.dart';
 import 'sophia_ai_screen.dart';
 import 'voice_assistant_screen.dart';
 import '../widgets/student_lms_shell.dart';
-
+import 'payment_history_screen.dart';
+import 'quizzes_screen.dart';
 // =============================================================================
 // MOCK DATA MODELS & DATA STORES
 // =============================================================================
@@ -307,7 +308,7 @@ class StudentHomeHubScreen extends StatefulWidget {
 }
 
 class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
-  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor, 6 Voice Assistant
+  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor, 6 Voice Assistant, 7 Payment History
   
   bool isDarkMode = false;
 
@@ -394,6 +395,27 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
         content = VoiceAssistantScreen(
           userName: widget.userName,
           isDarkMode: isDarkMode,
+        );
+        break;
+      case 7:
+        // StudentLmsShell already owns the global sidebar/top header.
+        // Therefore PaymentHistoryScreen is only the page content.
+        content = PaymentHistoryScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
+      case 8:
+        content = QuizzesScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+          onSelectSidebarIndex: (index) {
+            setState(() {
+              activeSidebarIndex = index;
+            });
+          },
+          onSignOut: widget.onSignOut,
         );
         break;
 
@@ -1200,7 +1222,7 @@ class _LMSCodingScreenState extends State<LMSCodingScreen> {
             ],
           ),
         ),
-      );;
+      );
   }
 
 
@@ -2457,7 +2479,7 @@ class _GamifyLearningsScreenState extends State<GamifyLearningsScreen> {
             ],
           ),
         ),
-      );;
+      );
   }
 
 

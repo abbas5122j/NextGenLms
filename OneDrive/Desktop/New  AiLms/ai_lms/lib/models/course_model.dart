@@ -263,14 +263,14 @@ class Course {
           lessonsCount: 4,
         ),
 
-        ModuleModel(
+        const ModuleModel(
           title:
               'Module 2: Advanced Implementation & Tooling',
           duration: '4h 00m',
           lessonsCount: 5,
         ),
 
-        ModuleModel(
+        const ModuleModel(
           title:
               'Module 3: Capstone Hands-On Project & Live Deployment',
           duration: '5h 15m',
