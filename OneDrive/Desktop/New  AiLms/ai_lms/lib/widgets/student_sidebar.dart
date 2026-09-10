@@ -21,6 +21,8 @@ import 'package:google_fonts/google_fonts.dart';
 /// 10 -> Announcement
 /// 11 -> Certification
 /// 12 -> Report
+/// 13 -> ATS Resume Builder
+/// 14 -> FAQs
 class StudentSidebar extends StatefulWidget {
   final int activeIndex;
   final bool isDarkMode;
@@ -131,6 +133,14 @@ class _StudentSidebarState extends State<StudentSidebar> {
     {
       'title': 'Report',
       'icon': Icons.bar_chart_outlined,
+    },
+    {
+      'title': 'ATS Resume Builder',
+      'icon': Icons.description_outlined,
+    },
+    {
+      'title': 'FAQs',
+      'icon': Icons.chat_bubble_outline,
     },
   ];
 

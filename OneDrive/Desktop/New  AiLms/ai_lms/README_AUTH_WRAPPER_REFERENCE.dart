@@ -201,7 +201,7 @@ class _AuthWrapperState
 
     if (_currentScreen ==
         AuthScreenState.sophiaAssessment) {
-      return SophiaAIScreen(
+      return SophiaAiScreen(
         userName:
             _nameController.text.isEmpty
                 ? 'Abhijeet'

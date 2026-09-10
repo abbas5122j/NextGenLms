@@ -1,0 +1,11 @@
+Add this dependency to your existing pubspec.yaml:
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+
+If `http` is already present, do not add it twice.
+
+Then run:
+flutter pub get

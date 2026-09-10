@@ -9,6 +9,12 @@ import 'voice_assistant_screen.dart';
 import '../widgets/student_lms_shell.dart';
 import 'payment_history_screen.dart';
 import 'quizzes_screen.dart';
+import 'assignment_screen.dart';
+import 'announcement_screen.dart';
+import 'certification_screen.dart';
+import 'report_screen.dart';
+import 'ats_resume_builder.dart';
+import 'faq_screen.dart';
 
 // =============================================================================
 // MOCK DATA MODELS & DATA STORES
@@ -286,7 +292,7 @@ final Map<String, dynamic> gamifyLevelRoadmaps = {
 };
 
 // =============================================================================
-// 1. STUDENT HOME HUB SCREEN (MAIN ROUTER & DASHBOARD)
+// 1. STUDENT HOME HUB SCREEN (MAIN ROUTER & DASHBOARD — REFERENCE DESIGN)
 // =============================================================================
 class StudentHomeHubScreen extends StatefulWidget {
   final String userName;
@@ -309,13 +315,24 @@ class StudentHomeHubScreen extends StatefulWidget {
 }
 
 class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
-  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor, 6 Voice Assistant, 7 Payment History, 8 Quizzes, 9 Assignment, 10 Announcement, 11 Certification, 12 Report
+  int activeSidebarIndex = 0; // 0 Home, 1 Coding, 2 Gamify, 3 Courses, 4 Projects, 5 Sophia AI Tutor, 6 Voice Assistant, 7 Payment History, 8 Quizzes, 9 Assignment, 10 Announcement, 11 Certification, 12 Report, 13 ATS Resume, 14 FAQ
   
   bool isDarkMode = false;
 
   // Course selected from Courses -> Take Practice Quiz.
   String? _quizCourseId;
   String? _quizCourseTitle;
+
+  // Today’s Goal: tasks the student has explicitly completed.
+  final Set<int> _completedGoalTasks = <int>{0, 1};
+
+  final List<String> _todayGoalTasks = const [
+    'Watch 1 lecture',
+    'Complete 1 quiz',
+    'Code for 30 minutes',
+    'Read 1 documentation',
+    'Build mini project',
+  ];
 
   DateTime _currentCalendarMonth = DateTime(2026, 8, 1);
   DateTime _selectedDate = DateTime(2026, 8, 9);
@@ -325,6 +342,10 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
     Widget content;
 
     switch (activeSidebarIndex) {
+      case 0:
+        content = _buildHomeContent();
+        break;
+
       case 1:
         content = LMSCodingScreen(
           userName: widget.userName,
@@ -426,10 +447,56 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
         );
         break;
 
+      case 9:
+        content = AssignmentScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
+      case 10:
+        content = AnnouncementScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
+      case 11:
+        content = CertificationScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
+      case 12:
+        content = ReportScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
+      case 13:
+        content = AtsResumeBuilderScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
+      case 14:
+        content = FaqScreen(
+          userName: widget.userName,
+          isDarkMode: isDarkMode,
+        );
+        break;
+
       default:
+        // Safety fallback: any unexpected index returns to Home Hub.
         content = _buildHomeContent();
+        break;
     }
 
+    // The single StudentLmsShell owns the sidebar and top header for
+    // every case, so every destination remains accessible from Home Hub.
     // Voice Assistant uses sidebar index 6. StudentLmsShell receives the
     // same index, so clicking "Voice Assistant" highlights the correct item.
     return StudentLmsShell(
@@ -446,11 +513,32 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
   }
 
   void _selectSidebarIndex(int index) {
+    // Valid Home Hub destinations:
+    // 0 Home
+    // 1 LMS Coding
+    // 2 Gamify Learnings
+    // 3 Courses
+    // 4 Projects
+    // 5 Sophia AI Tutor
+    // 6 Voice Assistant
+    // 7 Payment History
+    // 8 Quizzes
+    // 9 Assignment
+    // 10 Announcement
+    // 11 Certification
+    // 12 Report
+    // 13 ATS Resume Builder
+    // 14 FAQ
+    if (index < 0 || index > 14) {
+      index = 0;
+    }
+
     setState(() {
       activeSidebarIndex = index;
 
-      // A normal sidebar click on Quizzes opens the directory.
-      // The Courses screen is the only place that supplies a course target.
+      // A normal sidebar click on Quizzes opens the complete quiz
+      // directory. Courses is the only flow that supplies a specific
+      // course target.
       if (index != 8) {
         _quizCourseId = null;
         _quizCourseTitle = null;
@@ -458,660 +546,1209 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
     });
   }
 
+  // ===========================================================================
+  // HOME HUB — dashboard matching the supplied reference design
+  // ===========================================================================
   Widget _buildHomeContent() {
-    final bgColor =
-        isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F6FB);
-    final cardBgColor =
-        isDarkMode ? const Color(0xFF131927) : Colors.white;
-    final primaryTextColor =
-        isDarkMode ? Colors.white : const Color(0xFF0F172A);
-    final subTextColor =
-        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final bg = isDarkMode ? const Color(0xFF090D16) : const Color(0xFFF4F7FB);
+    final card = isDarkMode ? const Color(0xFF131A29) : Colors.white;
+    final text = isDarkMode ? Colors.white : const Color(0xFF17213B);
+    final muted = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Container(
-      color: bgColor,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildGreetingBanner(),
-            const SizedBox(height: 16),
-            _buildAIInsightBar(),
-            const SizedBox(height: 24),
-            _buildGamifyConsole(),
-            const SizedBox(height: 24),
-            _buildActiveCourseTracks(
-              cardBgColor,
-              primaryTextColor,
-              subTextColor,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    children: [
-                      _buildSkillGraphAndCareerMap(
-                        cardBgColor,
-                        primaryTextColor,
-                        subTextColor,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildPeerLeaderboardCard(
-                        cardBgColor,
-                        primaryTextColor,
-                        subTextColor,
-                      ),
-                    ],
-                  ),
+      color: bg,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 980;
+          final tablet =
+              constraints.maxWidth >= 720 && constraints.maxWidth < 980;
+          final compact = constraints.maxWidth < 720;
+
+          // Keep the desktop dashboard visually proportional to a 16:9
+          // workspace while allowing it to scroll on shorter displays.
+          final availableHeight = constraints.maxHeight;
+          final max16by9Width = availableHeight.isFinite
+              ? availableHeight * 16 / 9
+              : double.infinity;
+          final dashboardWidth = constraints.maxWidth.isFinite
+              ? constraints.maxWidth.clamp(0.0, max16by9Width)
+              : double.infinity;
+
+          return Center(
+            child: SizedBox(
+              width: dashboardWidth,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 8 : 10,
+                  compact ? 8 : 9,
+                  compact ? 8 : 10,
+                  11,
                 ),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 2,
-                  child: _buildFullInteractiveCalendar(
-                    cardBgColor,
-                    primaryTextColor,
-                    subTextColor,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-  
-
-  Widget _buildGreetingBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFF6B58),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hello, ${widget.userName}! 👋',
-                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Ready to secure your next certification badge? Your study streak is\nactively running. Let\'s make today count!',
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withValues(alpha: 0.9), height: 1.4),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _badgePill('🔥 7 Days Streak'),
-                  const SizedBox(width: 8),
-                  _badgePill('🏆 Rank #12/120'),
-                ],
-              )
-            ],
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-            child: Text(
-              'Resume Learning',
-              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFFFF5722)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _badgePill(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(text, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
-    );
-  }
-
-  Widget _buildAIInsightBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2D2509) : const Color(0xFFFEFCE8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDarkMode ? const Color(0xFF71540C) : const Color(0xFFFEF08A)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.auto_awesome, size: 16, color: Color(0xFFF59E0B)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'SOPHIA AI ASSESSMENT ROUTE: Enrolled in ${widget.selectedCourseTitle} under the ${widget.userLevel.toUpperCase()} track.',
-              style: GoogleFonts.inter(fontSize: 11, color: isDarkMode ? const Color(0xFFFDE68A) : const Color(0xFF854D0E)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGamifyConsole() {
-    final Map<String, dynamic> courseMap = Map<String, dynamic>.from(gamifyLevelRoadmaps[widget.selectedCourseTitle] ?? gamifyLevelRoadmaps['Default']!);
-    final List<Map<String, dynamic>> levels = List<Map<String, dynamic>>.from(courseMap[widget.userLevel] ?? courseMap['beginner']!);
-    
-    Map<String, dynamic> activeLevel = levels.first;
-    for (final lvl in levels) {
-      if ((lvl['unlocked'] as bool? ?? false) == true) {
-        activeLevel = lvl;
-        break;
-      }
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF131B2E), Color(0xFF0A0F1D)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFF222F43), width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      _pill('🕹️ GAMIFY AI LEVEL BOARD', const Color(0xFFFF6B35)),
-                      const SizedBox(width: 8),
-                      _pill('LEVEL: ${widget.userLevel.toUpperCase()}', const Color(0xFFA855F7)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${widget.selectedCourseTitle} Path',
-                    style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  Text(
-                    'Assessed Level Syllabus: ${widget.userLevel.toUpperCase()} Roadmap',
-                    style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF334155)),
-                ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
-                    const SizedBox(width: 8),
-                    Text('Core Pioneer', style: GoogleFonts.inter(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 16),
-                    Text('0 / 2000 XP', style: GoogleFonts.inter(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.bold)),
+                    _homeHero(compact),
+                    const SizedBox(height: 7),
+                    _homeStats(compact, card, text, muted),
+                    const SizedBox(height: 7),
+
+                    // Desktop: Continue Learning + Today's Goal.
+                    // Tablet/mobile: stack them safely.
+                    if (wide)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 7,
+                            child: _continueLearning(card, text, muted),
+                          ),
+                          const SizedBox(width: 7),
+                          Expanded(
+                            flex: 3,
+                            child: _todayGoal(card, text, muted),
+                          ),
+                        ],
+                      )
+                    else ...[
+                      _continueLearning(card, text, muted),
+                      const SizedBox(height: 7),
+                      _todayGoal(card, text, muted),
+                    ],
+
+                    const SizedBox(height: 7),
+
+                    // Desktop: three cards. Tablet: two + Quick Actions below.
+                    // Mobile: one per row.
+                    if (wide)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _deadlines(card, text, muted)),
+                          const SizedBox(width: 7),
+                          Expanded(child: _announcements(card, text, muted)),
+                          const SizedBox(width: 7),
+                          Expanded(child: _quickActions(card, text, muted)),
+                        ],
+                      )
+                    else if (tablet)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _deadlines(card, text, muted)),
+                          const SizedBox(width: 7),
+                          Expanded(child: _announcements(card, text, muted)),
+                        ],
+                      )
+                    else ...[
+                      _deadlines(card, text, muted),
+                      const SizedBox(height: 7),
+                      _announcements(card, text, muted),
+                      const SizedBox(height: 7),
+                      _quickActions(card, text, muted),
+                    ],
+
+                    if (tablet) ...[
+                      const SizedBox(height: 7),
+                      _quickActions(card, text, muted),
+                    ],
+
+                    const SizedBox(height: 7),
+                    _homeFooter(),
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF070A12),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: const Color(0xFF1E293B)),
-                  ),
-                  child: CandyCrushPathMap(
-                    levels: levels,
-                    onNodeTap: () {
-                      setState(() {
-                        activeSidebarIndex = 2;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF131B2E),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: const Color(0xFFFF6B35).withValues(alpha: 0.4), width: 1.5),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Active Mission Target', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(color: const Color(0xFFFF6B35).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-                            child: Text('Selected', style: GoogleFonts.inter(color: const Color(0xFFFF6B35), fontSize: 10, fontWeight: FontWeight.bold)),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        activeLevel['title']?.toString() ?? '',
-                        style: GoogleFonts.inter(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Estimated Duration: ${activeLevel['duration']}  |  Reward: ${activeLevel['xp']}',
-                        style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 11),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(12)),
-                        child: Text(
-                          '⚡ ACTIVE LEVEL GOAL: Complete the foundational interactive compiler puzzle and video module to unlock Level 02.',
-                          style: GoogleFonts.inter(color: Colors.amber, fontSize: 11, height: 1.4),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              activeSidebarIndex = 2;
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF6B35),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Open Interactive Console 🎮', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.arrow_forward, size: 16, color: Colors.white),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _pill(String label, Color color) {
+  Widget _homeHero(bool compact) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-      child: Text(label, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
-    );
-  }
-
-  Widget _buildActiveCourseTracks(Color cardBg, Color textPrimary, Color textSub) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 118),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF2C207E),
+            Color(0xFF3045C5),
+            Color(0xFF6858E9),
+            Color(0xFF9A5AF2),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF5146C8).withValues(alpha: 0.18),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
           children: [
-            Text('ACTIVE COURSE TRACKS', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: textSub)),
-            InkWell(
-              onTap: () => setState(() => activeSidebarIndex = 3),
-              child: Text('View Full Course Directory ➔', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFFFF5722))),
+            Positioned(
+              right: -20,
+              bottom: -36,
+              child: Row(
+                children: [
+                  _heroCloud(90),
+                  _heroCloud(125),
+                  _heroCloud(70),
+                ],
+              ),
+            ),
+            Positioned(
+              right: compact ? 18 : 155,
+              top: 13,
+              child: Text(
+                '✦     ✦',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withValues(alpha: 0.70),
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Positioned(
+              right: compact ? 25 : 190,
+              top: 25,
+              child: Transform.rotate(
+                angle: -0.35,
+                child: const Icon(
+                  Icons.rocket_launch_rounded,
+                  color: Color(0xFFFFD4B7),
+                  size: 54,
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                compact ? 16 : 21,
+                compact ? 16 : 17,
+                compact ? 16 : 21,
+                compact ? 14 : 15,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hello, ${widget.userName}! 👋',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: compact ? 19 : 21,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Ready to secure your next certification badge?',
+                          style: GoogleFonts.inter(
+                            color: Colors.white.withValues(alpha: 0.96),
+                            fontSize: compact ? 10 : 10.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Your study streak is actively running. Let’s make today count!',
+                          maxLines: compact ? 1 : 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontSize: 9,
+                          ),
+                        ),
+                        const SizedBox(height: 9),
+                        Wrap(
+                          spacing: 7,
+                          runSpacing: 6,
+                          children: [
+                            _heroPill('🔥 7 Days Streak'),
+                            _heroPill('🏆 Rank #12/120'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!compact) ...[
+                    const SizedBox(width: 18),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 31, right: 2),
+                      child: ElevatedButton(
+                        onPressed: () => setState(() => activeSidebarIndex = 3),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF3140B2),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 9,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                        ),
+                        child: Text(
+                          'Resume Learning  →',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: _buildTrackCard('Web Engineering', 'React Hooks & Context', 0.68, Colors.purple, cardBg, textPrimary, textSub)),
-            const SizedBox(width: 16),
-            Expanded(child: _buildTrackCard('Data Science & AI', 'Python Async IO', 0.45, Colors.orange, cardBg, textPrimary, textSub)),
-            const SizedBox(width: 16),
-            Expanded(child: _buildTrackCard('Backend Go', 'Microservices Architecture', 0.12, Colors.teal, cardBg, textPrimary, textSub)),
-          ],
-        )
+      ),
+    );
+  }
+
+  Widget _heroCloud(double size) {
+    return Container(
+      width: size,
+      height: size * 0.45,
+      margin: const EdgeInsets.only(left: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.20),
+        borderRadius: BorderRadius.circular(size),
+      ),
+    );
+  }
+
+  Widget _heroPill(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _homeStats(bool compact, Color card, Color text, Color muted) {
+    final stats = [
+      {
+        'icon': Icons.menu_book_rounded,
+        'value': '4 / 12',
+        'label': 'Courses in Progress',
+        'progress': 0.33,
+      },
+      {
+        'icon': Icons.code_rounded,
+        'value': '6',
+        'label': 'Projects Completed',
+        'progress': 0.0,
+      },
+      {
+        'icon': Icons.workspace_premium_rounded,
+        'value': '2',
+        'label': 'Certifications Earned',
+        'progress': 0.0,
+      },
+      {
+        'icon': Icons.bar_chart_rounded,
+        'value': '87%',
+        'label': 'Average Quiz Score',
+        'progress': 0.0,
+      },
+    ];
+
+    if (compact) {
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: stats.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 2.35,
+        ),
+        itemBuilder: (_, i) => _statCard(
+          stats[i],
+          card,
+          text,
+          muted,
+          compact: true,
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        for (int i = 0; i < stats.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(child: _statCard(stats[i], card, text, muted)),
+        ],
       ],
     );
   }
 
-  Widget _buildTrackCard(String title, String subtitle, double progress, Color color, Color cardBg, Color textPrimary, Color textSub) {
-    return InkWell(
-      onTap: () => setState(() => activeSidebarIndex = 3),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+  Widget _statCard(
+    Map<String, dynamic> data,
+    Color card,
+    Color text,
+    Color muted, {
+    bool compact = false,
+  }) {
+    final icon = data['icon'] as IconData;
+    final value = data['value'] as String;
+    final label = data['label'] as String;
+    final progress = data['progress'] as double;
+
+    final tint = icon == Icons.menu_book_rounded
+        ? const Color(0xFF16B890)
+        : icon == Icons.code_rounded
+            ? const Color(0xFF3284F0)
+            : icon == Icons.workspace_premium_rounded
+                ? const Color(0xFFF29A4B)
+                : const Color(0xFF8B4DEB);
+
+    return Container(
+      height: compact ? 76 : 70,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 12,
+        vertical: 9,
+      ),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(
+          color: isDarkMode ? const Color(0xFF263149) : const Color(0xFFE4EAF3),
         ),
-        child: Row(
-          children: [
-            CircularProgressIndicator(value: progress, color: color, backgroundColor: const Color(0xFFF1F5F9)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.08 : 0.025),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: compact ? 34 : 38,
+            height: compact ? 34 : 38,
+            decoration: BoxDecoration(
+              color: tint.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: tint, size: compact ? 19 : 22),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.inter(
+                    color: text,
+                    fontSize: compact ? 16 : 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    color: muted,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (progress > 0)
+            SizedBox(
+              width: 42,
+              height: 42,
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  Text(title, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: textPrimary)),
-                  Text(subtitle, style: GoogleFonts.inter(fontSize: 10, color: textSub)),
+                  CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 5,
+                    backgroundColor: isDarkMode
+                        ? const Color(0xFF283247)
+                        : const Color(0xFFE8EEF5),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF21A97A),
+                    ),
+                  ),
+                  Text(
+                    '33%',
+                    style: GoogleFonts.inter(
+                      color: text,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
-            )
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildSkillGraphAndCareerMap(Color cardBg, Color textPrimary, Color textSub) {
+  Widget _panel({
+    required Widget child,
+    required Color card,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(12),
+  }) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: double.infinity,
+      padding: padding,
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+        color: card,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(
+          color: isDarkMode ? const Color(0xFF263149) : const Color(0xFFE3E9F2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.08 : 0.025),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _sectionTitle(
+    String title,
+    String action,
+    Color text,
+    Color muted, {
+    VoidCallback? onAction,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: GoogleFonts.inter(
+              color: text,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: onAction,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+            child: Text(
+              action,
+              style: GoogleFonts.inter(
+                color: const Color(0xFF1F78DE),
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _continueLearning(Color card, Color text, Color muted) {
+    final courses = [
+      {
+        'title': 'JavaScript',
+        'subtitle': 'for Beginners',
+        'progress': 0.75,
+        'time': '4h 20m left',
+        'value': '75%',
+        'icon': Icons.javascript_rounded,
+        'iconColor': Color(0xFF0FAF86),
+      },
+      {
+        'title': 'React 18',
+        'subtitle': 'Complete Guide',
+        'progress': 0.40,
+        'time': '6h 10m left',
+        'value': '40%',
+        'icon': Icons.hub_rounded,
+        'iconColor': Color(0xFF13A7D6),
+      },
+      {
+        'title': 'Node.js',
+        'subtitle': '& Express',
+        'progress': 0.20,
+        'time': '8h 30m left',
+        'value': '20%',
+        'icon': Icons.account_tree_rounded,
+        'iconColor': Color(0xFF9349E8),
+      },
+    ];
+
+    return _panel(
+      card: card,
+      padding: const EdgeInsets.fromLTRB(11, 9, 11, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(
+            '▶  Continue Learning',
+            'View All Courses  →',
+            text,
+            muted,
+            onAction: () => setState(() => activeSidebarIndex = 3),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            'Pick up where you left off and stay on track.',
+            style: GoogleFonts.inter(color: muted, fontSize: 9),
+          ),
+          const SizedBox(height: 7),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 570;
+              if (stacked) {
+                return Column(
+                  children: [
+                    for (int i = 0; i < courses.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 7),
+                      _courseMiniCard(courses[i], card, text, muted),
+                    ],
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  for (int i = 0; i < courses.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 7),
+                    Expanded(
+                      child: _courseMiniCard(courses[i], card, text, muted),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _courseMiniCard(
+    Map<String, dynamic> course,
+    Color parentCard,
+    Color text,
+    Color muted,
+  ) {
+    final iconColor = course['iconColor'] as Color;
+    final progress = course['progress'] as double;
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF101725) : const Color(0xFFFBFCFE),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(
+          color: isDarkMode ? const Color(0xFF263149) : const Color(0xFFE4EAF2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Aptitude-to-Career Qualification Map', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary)),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12)),
-                child: Text('92% Match', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF166534))),
+                width: 35,
+                height: 35,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.13),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(
+                  course['icon'] as IconData,
+                  color: iconColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${course['title']}\n${course['subtitle']}',
+                  style: GoogleFonts.inter(
+                    color: text,
+                    fontSize: 9,
+                    height: 1.25,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildSkillProgressRow('Logical Synthesizer', 0.50, textPrimary),
-          _buildSkillProgressRow('Algorithmic Solver', 0.45, textPrimary),
-          _buildSkillProgressRow('Syntax Comprehension', 0.55, textPrimary),
-          _buildSkillProgressRow('Systems Architecture', 0.40, textPrimary),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSkillProgressRow(String label, double val, Color textPrimary) {
-    return InkWell(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('$label Metrics'),
-            content: Text('Sophia AI analysis confirms a ${(val * 100).toInt()}% proficiency score based on recent quiz and proctored compiler submissions.'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))
-            ],
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: textPrimary)),
-                Text('${(val * 100).toInt()}%', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: textPrimary)),
-              ],
-            ),
-            const SizedBox(height: 4),
-            LinearProgressIndicator(value: val, color: const Color(0xFFFF6B35), backgroundColor: const Color(0xFFE2E8F0), minHeight: 6),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPeerLeaderboardCard(Color cardBg, Color textPrimary, Color textSub) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('TOP PERFORMING PEERS', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: textSub)),
-          const SizedBox(height: 16),
-          _buildPeerRow('Rahul Sahu', 'Rank #1', '99.2% rate', textPrimary, textSub),
-          const SizedBox(height: 4),
-          _buildPeerRow('Jessica Doe', 'Rank #2', '98.4% rate', textPrimary, textSub),
-          const SizedBox(height: 4),
-          _buildPeerRow('Oliver Platt', 'Rank #3', '97.5% rate', textPrimary, textSub),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPeerRow(String name, String rank, String score, Color textPrimary, Color textSub) {
-    return InkWell(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(name),
-            content: Text('$rank • Current Performance: $score'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))
-            ],
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: const Color(0xFFE9D5FF),
-                  child: Text(name[0], style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF7E22CE))),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: LinearProgressIndicator(
+                    minHeight: 5,
+                    value: progress,
+                    backgroundColor: isDarkMode
+                        ? const Color(0xFF2B3447)
+                        : const Color(0xFFE4EAF1),
+                    valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+                  ),
                 ),
-                const SizedBox(width: 12),
+              ),
+              const SizedBox(width: 7),
+              Text(
+                course['value'] as String,
+                style: GoogleFonts.inter(
+                  color: text,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Row(
+            children: [
+              Icon(Icons.schedule_rounded, size: 11, color: muted),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Text(
+                  course['time'] as String,
+                  style: GoogleFonts.inter(color: muted, fontSize: 8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          SizedBox(
+            width: double.infinity,
+            height: 22,
+            child: TextButton(
+              onPressed: () => setState(() => activeSidebarIndex = 3),
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFFFFE5E4),
+                foregroundColor: const Color(0xFFFF3D38),
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Continue  →',
+                style: GoogleFonts.inter(
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _todayGoal(Color card, Color text, Color muted) {
+    final completed = _completedGoalTasks.length;
+    final total = _todayGoalTasks.length;
+    final progress = total == 0 ? 0.0 : completed / total;
+
+    return _panel(
+      card: card,
+      padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // On narrow dashboard columns, put the progress ring above the
+          // checklist. This prevents the checklist from ever colliding with
+          // the ring or getting clipped.
+          final narrow = constraints.maxWidth < 410;
+
+          final progressRing = SizedBox(
+            width: 76,
+            height: 76,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 5.5,
+                  backgroundColor: isDarkMode
+                      ? const Color(0xFF293347)
+                      : const Color(0xFFE9EEF4),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF3A8FEA),
+                  ),
+                ),
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: textPrimary)),
-                    Text(rank, style: GoogleFonts.inter(fontSize: 10, color: textSub)),
+                    Text(
+                      '$completed/$total',
+                      style: GoogleFonts.inter(
+                        color: text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Tasks',
+                      style: GoogleFonts.inter(
+                        color: muted,
+                        fontSize: 8,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
-            Text(score, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF16A34A), fontWeight: FontWeight.bold)),
-          ],
+          );
+
+          final taskList = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (int i = 0; i < _todayGoalTasks.length; i++)
+                _goalRow(
+                  _todayGoalTasks[i],
+                  _completedGoalTasks.contains(i),
+                  text,
+                  onTap: () {
+                    setState(() {
+                      if (_completedGoalTasks.contains(i)) {
+                        _completedGoalTasks.remove(i);
+                      } else {
+                        _completedGoalTasks.add(i);
+                      }
+                    });
+                  },
+                ),
+            ],
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionTitle(
+                '🎯  Today’s Goal',
+                'View Goals',
+                text,
+                muted,
+                onAction: () => setState(() => activeSidebarIndex = 9),
+              ),
+              Text(
+                'Select the tasks you have completed today.',
+                style: GoogleFonts.inter(
+                  color: muted,
+                  fontSize: 8.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (narrow) ...[
+                Center(child: progressRing),
+                const SizedBox(height: 8),
+                taskList,
+              ] else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    progressRing,
+                    const SizedBox(width: 10),
+                    Expanded(child: taskList),
+                  ],
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _goalRow(
+    String label,
+    bool done,
+    Color text, {
+    VoidCallback? onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(5),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+          child: Row(
+            children: [
+              Icon(
+                done
+                    ? Icons.check_box_rounded
+                    : Icons.check_box_outline_blank_rounded,
+                size: 15,
+                color: done
+                    ? const Color(0xFF2588E7)
+                    : const Color(0xFF94A3B8),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    color: text,
+                    fontSize: 8.5,
+                    fontWeight: done
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildFullInteractiveCalendar(Color cardBg, Color textPrimary, Color textSub) {
-    final months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-    final monthName = months[_currentCalendarMonth.month - 1];
-    final year = _currentCalendarMonth.year;
+  Widget _deadlineOrAnnouncementHeader(
+    String title,
+    IconData icon,
+    Color text,
+    Color muted,
+    VoidCallback onTap,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: const Color(0xFF2C87E8)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            title,
+            style: GoogleFonts.inter(
+              color: text,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: onTap,
+          child: Text(
+            'View All  →',
+            style: GoogleFonts.inter(
+              color: const Color(0xFF2C87E8),
+              fontSize: 8.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-    final daysInMonth = DateUtils.getDaysInMonth(year, _currentCalendarMonth.month);
-    final firstDayOffset = DateTime(year, _currentCalendarMonth.month, 1).weekday % 7;
-    final totalGridCells = firstDayOffset + daysInMonth;
+  Widget _deadlines(Color card, Color text, Color muted) {
+    final rows = [
+      ['React Project Submission', 'May 15, 2025', '3 days left'],
+      ['Node.js Quiz', 'May 18, 2025', '6 days left'],
+      ['Web Dev Certification Test', 'May 25, 2025', '13 days left'],
+    ];
+
+    return _panel(
+      card: card,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      child: Column(
+        children: [
+          _deadlineOrAnnouncementHeader(
+            'Upcoming Deadlines',
+            Icons.calendar_month_rounded,
+            text,
+            muted,
+            () => setState(() => activeSidebarIndex = 9),
+          ),
+          const SizedBox(height: 7),
+          for (int i = 0; i < rows.length; i++) ...[
+            _deadlineRow(rows[i], text, muted),
+            if (i < rows.length - 1) const SizedBox(height: 4),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _deadlineRow(List<String> row, Color text, Color muted) {
+    final urgent = row[2].startsWith('3');
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+        color: isDarkMode ? const Color(0xFF101725) : const Color(0xFFFFFBFB),
+        borderRadius: BorderRadius.circular(7),
       ),
+      child: Row(
+        children: [
+          Container(
+            width: 23,
+            height: 23,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFECEB),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(
+              Icons.calendar_today_rounded,
+              color: Color(0xFFFF4C46),
+              size: 12,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  row[0],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    color: text,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  row[1],
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFFF4C46),
+                    fontSize: 7.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+            decoration: BoxDecoration(
+              color: urgent
+                  ? const Color(0xFFFFE1DF)
+                  : const Color(0xFFE9EEF5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              row[2],
+              style: GoogleFonts.inter(
+                color: urgent
+                    ? const Color(0xFFFF4C46)
+                    : const Color(0xFF59657A),
+                fontSize: 7,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _announcements(Color card, Color text, Color muted) {
+    final items = [
+      ['New Course: Advanced React Patterns', 'April 28, 2025', Color(0xFF2588E7)],
+      ['Maintenance Window', 'April 25, 2025', Color(0xFFF59E0B)],
+      ['Polygon Certificate Integration Live!', 'April 22, 2025', Color(0xFF16B890)],
+    ];
+
+    return _panel(
+      card: card,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      child: Column(
+        children: [
+          _deadlineOrAnnouncementHeader(
+            'Latest Announcements',
+            Icons.campaign_rounded,
+            text,
+            muted,
+            () => setState(() => activeSidebarIndex = 10),
+          ),
+          const SizedBox(height: 8),
+          for (int i = 0; i < items.length; i++) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: items[i][2] as Color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        items[i][0] as String,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          color: text,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        items[i][1] as String,
+                        style: GoogleFonts.inter(color: muted, fontSize: 7.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (i < items.length - 1) const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _quickActions(Color card, Color text, Color muted) {
+    final actions = [
+      {
+        'title': 'Explore Courses',
+        'icon': Icons.menu_book_rounded,
+        'color': Color(0xFF2789E7),
+        'bg': Color(0xFFEAF4FF),
+        'index': 3,
+      },
+      {
+        'title': 'Ask Sophia AI',
+        'icon': Icons.auto_awesome_rounded,
+        'color': Color(0xFFE949A2),
+        'bg': Color(0xFFFFEFF8),
+        'index': 5,
+      },
+      {
+        'title': 'Take a Quiz',
+        'icon': Icons.assignment_rounded,
+        'color': Color(0xFF16A77E),
+        'bg': Color(0xFFE8FAF4),
+        'index': 8,
+      },
+      {
+        'title': 'Build a Project',
+        'icon': Icons.code_rounded,
+        'color': Color(0xFF8B4DEB),
+        'bg': Color(0xFFF1EAFE),
+        'index': 4,
+      },
+    ];
+
+    return _panel(
+      card: card,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 9),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.calendar_month, size: 18, color: Color(0xFFFF6B35)),
-                  const SizedBox(width: 8),
-                  Text('$monthName $year', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: textPrimary)),
-                ],
+              const Icon(
+                Icons.bolt_rounded,
+                color: Color(0xFFFF453D),
+                size: 16,
               ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, size: 20),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
-                      setState(() {
-                        _currentCalendarMonth = DateTime(_currentCalendarMonth.year, _currentCalendarMonth.month - 1, 1);
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right, size: 20),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
-                      setState(() {
-                        _currentCalendarMonth = DateTime(_currentCalendarMonth.year, _currentCalendarMonth.month + 1, 1);
-                      });
-                    },
-                  ),
-                ],
-              )
+              const SizedBox(width: 5),
+              Text(
+                'Quick Actions',
+                style: GoogleFonts.inter(
+                  color: text,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                .map((day) => Expanded(
-                      child: Center(
-                        child: Text(
-                          day,
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: textSub),
-                        ),
-                      ),
-                    ))
-                .toList(),
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: totalGridCells,
+            itemCount: actions.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              mainAxisSpacing: 6,
-              crossAxisSpacing: 6,
+              crossAxisCount: 2,
+              crossAxisSpacing: 7,
+              mainAxisSpacing: 7,
+              childAspectRatio: 3.35,
             ),
-            itemBuilder: (context, index) {
-              if (index < firstDayOffset) {
-                return const SizedBox();
-              }
-
-              final dayNum = index - firstDayOffset + 1;
-              final cellDate = DateTime(year, _currentCalendarMonth.month, dayNum);
-              final isSelected = cellDate.day == _selectedDate.day && cellDate.month == _selectedDate.month && cellDate.year == _selectedDate.year;
-              final isToday = cellDate.day == 9 && cellDate.month == 8 && cellDate.year == 2026;
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() => _selectedDate = cellDate);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Selected Date: $dayNum $monthName $year'),
-                      duration: const Duration(milliseconds: 900),
-                    ),
-                  );
-                },
+            itemBuilder: (_, i) {
+              final action = actions[i];
+              return InkWell(
+                onTap: () => setState(
+                  () => activeSidebarIndex = action['index'] as int,
+                ),
+                borderRadius: BorderRadius.circular(8),
                 child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFFFF6B35)
-                        : isToday
-                            ? const Color(0xFFFF6B35).withValues(alpha: 0.15)
-                            : isDarkMode
-                                ? const Color(0xFF1E293B)
-                                : const Color(0xFFF8FAFC),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? Colors.white
-                          : isToday
-                              ? const Color(0xFFFF6B35)
-                              : Colors.transparent,
-                    ),
+                    color: action['bg'] as Color,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Center(
-                    child: Text(
-                      '$dayNum',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected
-                            ? Colors.white
-                            : isToday
-                                ? const Color(0xFFFF6B35)
-                                : textPrimary,
+                  child: Row(
+                    children: [
+                      Icon(
+                        action['icon'] as IconData,
+                        color: action['color'] as Color,
+                        size: 17,
                       ),
-                    ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          action['title'] as String,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF33415E),
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -1121,13 +1758,68 @@ class _StudentHomeHubScreenState extends State<StudentHomeHubScreen> {
       ),
     );
   }
+
+  Widget _homeFooter() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0E2421) : const Color(0xFFE9FBF5),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(
+          color: isDarkMode
+              ? const Color(0xFF17463F)
+              : const Color(0xFF9FE4CF),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.eco_rounded, color: Color(0xFF20A67E), size: 17),
+          const SizedBox(width: 7),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'You’re doing great!\n',
+                    style: GoogleFonts.inter(
+                      color: isDarkMode
+                          ? Colors.white
+                          : const Color(0xFF25405A),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  TextSpan(
+                    text: 'Consistency today builds your success tomorrow.',
+                    style: GoogleFonts.inter(
+                      color: isDarkMode
+                          ? const Color(0xFF9BC6BA)
+                          : const Color(0xFF668184),
+                      fontSize: 7.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (!isDarkMode)
+            Text(
+              '“Learn. Build. Grow. Repeat.”',
+              style: GoogleFonts.inter(
+                color: const Color(0xFF5E807F),
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          const SizedBox(width: 7),
+          const Icon(Icons.spa_rounded, color: Color(0xFF20A67E), size: 16),
+        ],
+      ),
+    );
+  }
 }
 
-
-
-// =============================================================================
-// 3. LMS CODING MAIN SCREEN & PROBLEM HUB
-// =============================================================================
 class LMSCodingScreen extends StatefulWidget {
   final String userName;
   final bool isDarkMode;
